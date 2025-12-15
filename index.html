@@ -896,6 +896,28 @@
             color: var(--text-muted);
         }
 
+        .history-item.today {
+            border: 2px solid var(--primary);
+            background: linear-gradient(135deg, rgba(0, 184, 148, 0.05) 0%, rgba(85, 239, 196, 0.05) 100%);
+        }
+
+        .history-item.empty-day {
+            opacity: 0.5;
+        }
+
+        .history-item.empty-day .history-header {
+            cursor: default;
+        }
+
+        .history-summary.today {
+            color: var(--primary);
+        }
+
+        .history-summary.muted {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
         /* Settings */
         .settings-section {
             background: var(--bg-card);
@@ -2918,21 +2940,32 @@
         async function renderHistoryScreen(container) {
             const t = translations[currentLang];
             
+            // Get current month's start and end
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            
+            // Start from first day of current month
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            
             let html = `
                 <div class="section-header">
-                    <h3 class="section-title">${t.history30}</h3>
+                    <h3 class="section-title">${t.months[currentMonth]} ${currentYear}</h3>
                 </div>
             `;
             
-            const today = new Date();
             let hasHistory = false;
             
-            for (let i = 0; i < 30; i++) {
-                const date = new Date(today);
-                date.setDate(date.getDate() - i);
+            // Loop from today backwards to first day of month
+            for (let d = new Date(today); d >= firstDayOfMonth; d.setDate(d.getDate() - 1)) {
+                const date = new Date(d);
                 const dateStr = getDateString(date);
+                const isToday = dateStr === getDateString(today);
                 
                 const snapshot = await db.ref(`dailyQuests/${currentUser.uid}/${dateStr}`).once('value');
+                
+                const dayName = t.daysFull[date.getDay() === 0 ? 6 : date.getDay() - 1];
+                const dateDisplay = `${date.getDate()} ${t.months[date.getMonth()]}`;
                 
                 if (snapshot.exists()) {
                     hasHistory = true;
@@ -2947,9 +2980,6 @@
                     const allDone = completed === total && total > 0;
                     const hasFailed = quests.some(q => q.status === 'failed');
                     
-                    const dayName = t.daysFull[date.getDay() === 0 ? 6 : date.getDay() - 1];
-                    const dateDisplay = `${date.getDate()} ${t.months[date.getMonth()]}`;
-                    
                     // Determine status icon and color
                     let statusIcon, statusClass;
                     if (allDone) {
@@ -2959,19 +2989,19 @@
                         statusIcon = '❌';
                         statusClass = 'failed';
                     } else {
-                        statusIcon = '⏳';
-                        statusClass = 'pending';
+                        statusIcon = isToday ? '📍' : '⏳';
+                        statusClass = isToday ? 'today' : 'pending';
                     }
                     
                     const itemId = `history-${dateStr}`;
                     
                     html += `
-                        <div class="history-item" onclick="toggleHistoryItem('${itemId}')">
+                        <div class="history-item ${isToday ? 'today' : ''}" onclick="toggleHistoryItem('${itemId}')">
                             <div class="history-header">
                                 <div class="history-left">
                                     <span class="history-status-icon">${statusIcon}</span>
                                     <div class="history-info">
-                                        <span class="history-date-text">${dayName}, ${dateDisplay}</span>
+                                        <span class="history-date-text">${dayName}, ${dateDisplay}${isToday ? ' (Hari Ini)' : ''}</span>
                                         <span class="history-summary ${statusClass}">${completed}/${total} ${t.completed.toLowerCase()}</span>
                                     </div>
                                 </div>
@@ -2995,6 +3025,23 @@
                             </div>
                         </div>
                     `;
+                } else {
+                    // Show day even if no quests (only for past days, not future)
+                    if (!isToday) {
+                        html += `
+                            <div class="history-item empty-day">
+                                <div class="history-header">
+                                    <div class="history-left">
+                                        <span class="history-status-icon">➖</span>
+                                        <div class="history-info">
+                                            <span class="history-date-text">${dayName}, ${dateDisplay}</span>
+                                            <span class="history-summary muted">${currentLang === 'ms' ? 'Tiada quest' : 'No quests'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
                 }
             }
             
