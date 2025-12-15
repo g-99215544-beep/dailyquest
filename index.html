@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Quest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --primary: #d4af37;
+            --primary-dark: #b8960c;
+            --secondary: #1a1a2e;
+            --bg-dark: #0f0f1a;
+            --bg-card: #16213e;
+            --bg-card-hover: #1a2747;
+            --text-light: #e8e8e8;
+            --text-muted: #8892b0;
+            --success: #4ade80;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --category-home: #f472b6;
+            --category-work: #60a5fa;
+            --category-health: #4ade80;
+            --category-finance: #fbbf24;
+            --category-learning: #a78bfa;
+            --category-personal: #fb923c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(ellipse at top, #1a1a3e 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, #0d1b2a 0%, transparent 50%),
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            background-attachment: fixed;
+        }
+
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 100px;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .login-logo {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(212, 175, 55, 0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .login-title {
+            font-family: 'Cinzel', serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+        }
+
+        .login-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            color: #333;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .google-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .google-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid rgba(212, 175, 55, 0.1);
+        }
+
+        .header-left h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .header-date {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .coins-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .coins-icon {
+            font-size: 20px;
+        }
+
+        .coins-amount {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 16px;
+        }
+
+        .coins-rm {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-light);
+        }
+
+        /* Progress Section */
+        .progress-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.1);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .progress-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .progress-count {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 6px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Week Summary */
+        .week-summary {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .week-day {
+            flex: 1;
+            text-align: center;
+            padding: 8px 4px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .week-day.completed {
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success);
+        }
+
+        .week-day.failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .week-day.today {
+            background: rgba(212, 175, 55, 0.2);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .week-day.future {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+        }
+
+        .week-day-name {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .week-day-icon {
+            font-size: 14px;
+        }
+
+        /* Quest List */
+        .quest-section {
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            color: var(--primary);
+        }
+
+        .quest-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quest-item {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .quest-item:hover {
+            background: var(--bg-card-hover);
+            transform: translateX(4px);
+        }
+
+        .quest-item.completed {
+            opacity: 0.6;
+        }
+
+        .quest-item.completed .quest-title {
+            text-decoration: line-through;
+        }
+
+        .quest-item.overdue {
+            border-left: 3px solid var(--danger);
+        }
+
+        .quest-checkbox {
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--text-muted);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .quest-item.completed .quest-checkbox {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .quest-checkbox::after {
+            content: '✓';
+            color: white;
+            font-weight: bold;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.2s ease;
+        }
+
+        .quest-item.completed .quest-checkbox::after {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .quest-content {
+            flex: 1;
+        }
+
+        .quest-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 15px;
+        }
+
+        .quest-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .quest-category {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .category-home { background: rgba(244, 114, 182, 0.2); color: var(--category-home); }
+        .category-work { background: rgba(96, 165, 250, 0.2); color: var(--category-work); }
+        .category-health { background: rgba(74, 222, 128, 0.2); color: var(--category-health); }
+        .category-finance { background: rgba(251, 191, 36, 0.2); color: var(--category-finance); }
+        .category-learning { background: rgba(167, 139, 250, 0.2); color: var(--category-learning); }
+        .category-personal { background: rgba(251, 146, 60, 0.2); color: var(--category-personal); }
+
+        .overdue-badge {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .quest-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .quest-action-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .quest-action-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-light);
+        }
+
+        .quest-action-btn.delete:hover {
+            color: var(--danger);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: var(--text-light);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 16px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .nav-item:hover:not(.active) {
+            color: var(--text-light);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        /* Floating Add Button */
+        .fab {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: none;
+            border-radius: 16px;
+            color: var(--secondary);
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            color: var(--primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: var(--text-light);
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255,255,255,0.08);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: var(--text-light);
+            font-size: 16px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .days-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .day-checkbox {
+            display: none;
+        }
+
+        .day-label {
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .day-checkbox:checked + .day-label {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--secondary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-light);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        /* History */
+        .history-item {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .history-date {
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-coins {
+            font-size: 14px;
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+
+        .history-coins.positive {
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success);
+        }
+
+        .history-coins.negative {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .history-quests {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Settings */
+        .settings-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .settings-title {
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item-label {
+            font-weight: 600;
+        }
+
+        .toggle {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: var(--primary);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(24px);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-weight: 700;
+        }
+
+        .user-email {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Celebration Animation */
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Quest Templates Management */
+        .template-item {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .template-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .template-title {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .template-days {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .template-day {
+            padding: 4px 8px;
+            background: rgba(212, 175, 55, 0.1);
+            color: var(--primary);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Streak Display */
+        .streak-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, rgba(251, 146, 60, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%);
+            border-radius: 12px;
+            margin-top: 12px;
+        }
+
+        .streak-icon {
+            font-size: 18px;
+        }
+
+        .streak-count {
+            font-weight: 700;
+            color: #fb923c;
+        }
+
+        .streak-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Language Toggle */
+        .lang-toggle {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .lang-btn {
+            padding: 8px 12px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: var(--secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 380px) {
+            .week-day {
+                padding: 6px 2px;
+                font-size: 10px;
+            }
+            
+            .day-label {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(212, 175, 55, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-logo">⚔️</div>
+        <h1 class="login-title">Daily Quest</h1>
+        <p class="login-subtitle" data-i18n="loginSubtitle">Gamify your daily tasks</p>
+        <button class="google-btn" onclick="signInWithGoogle()">
+            <svg viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span data-i18n="signInGoogle">Sign in with Google</span>
+        </button>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <div class="app-container">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>Daily Quest</h1>
+                    <p class="header-date" id="headerDate"></p>
+                </div>
+                <div class="header-right">
+                    <div class="coins-display">
+                        <span class="coins-icon">🪙</span>
+                        <div>
+                            <div class="coins-amount" id="coinsAmount">0</div>
+                            <div class="coins-rm" id="coinsRM">= RM0</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content will be rendered here -->
+            <main id="mainContent"></main>
+        </div>
+
+        <!-- Floating Action Button -->
+        <button class="fab" id="fabBtn" onclick="openAddQuestModal()">+</button>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-screen="today" onclick="switchScreen('today')">
+                <span class="nav-icon">⚔️</span>
+                <span data-i18n="navToday">Today</span>
+            </button>
+            <button class="nav-item" data-screen="quests" onclick="switchScreen('quests')">
+                <span class="nav-icon">📋</span>
+                <span data-i18n="navQuests">Quests</span>
+            </button>
+            <button class="nav-item" data-screen="history" onclick="switchScreen('history')">
+                <span class="nav-icon">📜</span>
+                <span data-i18n="navHistory">History</span>
+            </button>
+            <button class="nav-item" data-screen="settings" onclick="switchScreen('settings')">
+                <span class="nav-icon">⚙️</span>
+                <span data-i18n="navSettings">Settings</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Add/Edit Quest Modal -->
+    <div class="modal-overlay" id="questModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="questModalTitle" data-i18n="addQuest">Add Quest</h2>
+                <button class="modal-close" onclick="closeQuestModal()">×</button>
+            </div>
+            <form id="questForm" onsubmit="saveQuest(event)">
+                <input type="hidden" id="questId">
+                <div class="form-group">
+                    <label class="form-label" data-i18n="questTitle">Quest Title</label>
+                    <input type="text" class="form-input" id="questTitle" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="category">Category</label>
+                    <select class="form-select" id="questCategory">
+                        <option value="home" data-i18n="catHome">🏠 Home</option>
+                        <option value="work" data-i18n="catWork">💼 Work</option>
+                        <option value="health" data-i18n="catHealth">💪 Health</option>
+                        <option value="finance" data-i18n="catFinance">💰 Finance</option>
+                        <option value="learning" data-i18n="catLearning">📚 Learning</option>
+                        <option value="personal" data-i18n="catPersonal">🎯 Personal</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="repeatDays">Repeat on Days</label>
+                    <div class="days-selector" id="daysSelector"></div>
+                </div>
+                <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" data-i18n="confirmDelete">Confirm Delete</h2>
+                <button class="modal-close" onclick="closeDeleteModal()">×</button>
+            </div>
+            <p id="deleteMessage" data-i18n="deleteConfirmMsg">Are you sure you want to delete this quest?</p>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()" data-i18n="cancel">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()" data-i18n="delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Container -->
+    <div class="celebration" id="celebration"></div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCzjLQqOFHFKLescOm3XeNtP5vceNInW6s",
+            authDomain: "dailyquest-e7d7b.firebaseapp.com",
+            projectId: "dailyquest-e7d7b",
+            storageBucket: "dailyquest-e7d7b.firebasestorage.app",
+            messagingSenderId: "372073463598",
+            appId: "1:372073463598:web:22aaa1c892a2256369c4bf",
+            measurementId: "G-JMXNMZL5",
+            databaseURL: "https://dailyquest-e7d7b-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // App State
+        let currentUser = null;
+        let currentScreen = 'today';
+        let currentLang = 'ms';
+        let userCoins = 0;
+        let questTemplates = [];
+        let todayQuests = [];
+        let deleteTarget = null;
+
+        // Translations
+        const translations = {
+            ms: {
+                loginSubtitle: 'Gamifikasi tugas harian anda',
+                signInGoogle: 'Log masuk dengan Google',
+                navToday: 'Hari Ini',
+                navQuests: 'Quest',
+                navHistory: 'Sejarah',
+                navSettings: 'Tetapan',
+                addQuest: 'Tambah Quest',
+                editQuest: 'Edit Quest',
+                questTitle: 'Tajuk Quest',
+                category: 'Kategori',
+                catHome: '🏠 Rumah',
+                catWork: '💼 Kerja',
+                catHealth: '💪 Kesihatan',
+                catFinance: '💰 Kewangan',
+                catLearning: '📚 Pembelajaran',
+                catPersonal: '🎯 Peribadi',
+                repeatDays: 'Ulang pada Hari',
+                save: 'Simpan',
+                cancel: 'Batal',
+                delete: 'Padam',
+                confirmDelete: 'Sahkan Padam',
+                deleteConfirmMsg: 'Adakah anda pasti mahu padam quest ini?',
+                todayQuest: 'Quest Hari Ini',
+                overdueQuest: 'Quest Tertunggak',
+                completed: 'Selesai',
+                overdue: 'Tertunggak',
+                failed: 'Gagal',
+                pending: 'Belum Selesai',
+                noQuests: 'Tiada quest untuk hari ini',
+                addFirstQuest: 'Tambah quest pertama anda!',
+                questTemplates: 'Template Quest',
+                noTemplates: 'Tiada template quest',
+                history30: 'Sejarah (30 Hari)',
+                noHistory: 'Tiada sejarah',
+                settings: 'Tetapan',
+                language: 'Bahasa',
+                account: 'Akaun',
+                signOut: 'Log Keluar',
+                reward: 'Ganjaran',
+                penalty: 'Denda',
+                streak: 'hari berturut-turut',
+                allComplete: 'Tahniah! Semua quest selesai!',
+                days: ['Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab', 'Ahd'],
+                daysFull: ['Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu', 'Ahad'],
+                months: ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis']
+            },
+            en: {
+                loginSubtitle: 'Gamify your daily tasks',
+                signInGoogle: 'Sign in with Google',
+                navToday: 'Today',
+                navQuests: 'Quests',
+                navHistory: 'History',
+                navSettings: 'Settings',
+                addQuest: 'Add Quest',
+                editQuest: 'Edit Quest',
+                questTitle: 'Quest Title',
+                category: 'Category',
+                catHome: '🏠 Home',
+                catWork: '💼 Work',
+                catHealth: '💪 Health',
+                catFinance: '💰 Finance',
+                catLearning: '📚 Learning',
+                catPersonal: '🎯 Personal',
+                repeatDays: 'Repeat on Days',
+                save: 'Save',
+                cancel: 'Cancel',
+                delete: 'Delete',
+                confirmDelete: 'Confirm Delete',
+                deleteConfirmMsg: 'Are you sure you want to delete this quest?',
+                todayQuest: "Today's Quest",
+                overdueQuest: 'Overdue Quest',
+                completed: 'Completed',
+                overdue: 'Overdue',
+                failed: 'Failed',
+                pending: 'Pending',
+                noQuests: 'No quests for today',
+                addFirstQuest: 'Add your first quest!',
+                questTemplates: 'Quest Templates',
+                noTemplates: 'No quest templates',
+                history30: 'History (30 Days)',
+                noHistory: 'No history',
+                settings: 'Settings',
+                language: 'Language',
+                account: 'Account',
+                signOut: 'Sign Out',
+                reward: 'Reward',
+                penalty: 'Penalty',
+                streak: 'day streak',
+                allComplete: 'Congratulations! All quests completed!',
+                days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                daysFull: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            }
+        };
+
+        // Initialize
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                initializeApp();
+            } else {
+                currentUser = null;
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('hidden');
+            }
+        });
+
+        function signInWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(error => {
+                console.error('Login error:', error);
+                alert('Login failed: ' + error.message);
+            });
+        }
+
+        function signOut() {
+            auth.signOut();
+        }
+
+        async function initializeApp() {
+            await loadUserData();
+            await loadQuestTemplates();
+            await generateTodayQuests();
+            await checkOverdueQuests();
+            updateHeaderDate();
+            renderDaysSelector();
+            switchScreen('today');
+            applyTranslations();
+        }
+
+        // Database Functions
+        async function loadUserData() {
+            const snapshot = await db.ref(`users/${currentUser.uid}`).once('value');
+            const data = snapshot.val();
+            if (data) {
+                userCoins = data.totalCoins || 0;
+                currentLang = data.language || 'ms';
+            } else {
+                await db.ref(`users/${currentUser.uid}`).set({
+                    email: currentUser.email,
+                    totalCoins: 0,
+                    language: 'ms',
+                    createdAt: Date.now()
+                });
+                userCoins = 0;
+            }
+            updateCoinsDisplay();
+        }
+
+        async function loadQuestTemplates() {
+            const snapshot = await db.ref(`questTemplates/${currentUser.uid}`).once('value');
+            questTemplates = [];
+            snapshot.forEach(child => {
+                questTemplates.push({ id: child.key, ...child.val() });
+            });
+        }
+
+        async function generateTodayQuests() {
+            const today = getDateString(new Date());
+            const dayOfWeek = new Date().getDay();
+            const adjustedDay = dayOfWeek === 0 ? 7 : dayOfWeek;
+
+            // Check if today's quests already exist
+            const snapshot = await db.ref(`dailyQuests/${currentUser.uid}/${today}`).once('value');
+            
+            if (!snapshot.exists()) {
+                // Generate quests for today
+                for (const template of questTemplates) {
+                    if (template.daysOfWeek && template.daysOfWeek.includes(adjustedDay)) {
+                        await db.ref(`dailyQuests/${currentUser.uid}/${today}/${template.id}`).set({
+                            templateId: template.id,
+                            title: template.title,
+                            category: template.category,
+                            status: 'pending',
+                            createdAt: Date.now()
+                        });
+                    }
+                }
+            }
+
+            // Load today's quests
+            await loadTodayQuests();
+        }
+
+        async function loadTodayQuests() {
+            const today = getDateString(new Date());
+            const snapshot = await db.ref(`dailyQuests/${currentUser.uid}/${today}`).once('value');
+            todayQuests = [];
+            snapshot.forEach(child => {
+                todayQuests.push({ id: child.key, ...child.val() });
+            });
+        }
+
+        async function checkOverdueQuests() {
+            const today = new Date();
+            const todayStr = getDateString(today);
+            
+            // Check last 8 days for overdue quests
+            for (let i = 1; i <= 8; i++) {
+                const pastDate = new Date(today);
+                pastDate.setDate(pastDate.getDate() - i);
+                const pastDateStr = getDateString(pastDate);
+                
+                const snapshot = await db.ref(`dailyQuests/${currentUser.uid}/${pastDateStr}`).once('value');
+                
+                snapshot.forEach(child => {
+                    const quest = child.val();
+                    if (quest.status === 'pending') {
+                        const daysOverdue = i;
+                        if (daysOverdue > 7) {
+                            // Mark as failed and deduct coins
+                            db.ref(`dailyQuests/${currentUser.uid}/${pastDateStr}/${child.key}`).update({
+                                status: 'failed',
+                                failedAt: Date.now()
+                            });
+                            updateCoins(-10, 'penalty', `Quest gagal: ${quest.title}`);
+                        } else {
+                            // Mark as overdue
+                            db.ref(`dailyQuests/${currentUser.uid}/${pastDateStr}/${child.key}`).update({
+                                status: 'overdue',
+                                overdueDate: Date.now()
+                            });
+                        }
+                    }
+                });
+            }
+        }
+
+        async function toggleQuestComplete(questId, date = null) {
+            const dateStr = date || getDateString(new Date());
+            const questRef = db.ref(`dailyQuests/${currentUser.uid}/${dateStr}/${questId}`);
+            const snapshot = await questRef.once('value');
+            const quest = snapshot.val();
+            
+            if (quest) {
+                const newStatus = quest.status === 'completed' ? 'pending' : 'completed';
+                await questRef.update({
+                    status: newStatus,
+                    completedAt: newStatus === 'completed' ? Date.now() : null
+                });
+                
+                await loadTodayQuests();
+                
+                // Check if all quests completed
+                if (newStatus === 'completed') {
+                    const allCompleted = todayQuests.every(q => q.status === 'completed');
+                    if (allCompleted && todayQuests.length > 0) {
+                        // Check if reward already given today
+                        const rewardKey = `reward_${dateStr}`;
+                        const rewardSnapshot = await db.ref(`rewards/${currentUser.uid}/${rewardKey}`).once('value');
+                        
+                        if (!rewardSnapshot.exists()) {
+                            await updateCoins(10, 'reward', translations[currentLang].allComplete);
+                            await db.ref(`rewards/${currentUser.uid}/${rewardKey}`).set({
+                                date: dateStr,
+                                amount: 10,
+                                createdAt: Date.now()
+                            });
+                            celebrate();
+                        }
+                    }
+                }
+                
+                renderScreen();
+            }
+        }
+
+        async function updateCoins(amount, type, description) {
+            userCoins += amount;
+            await db.ref(`users/${currentUser.uid}/totalCoins`).set(userCoins);
+            await db.ref(`transactions/${currentUser.uid}`).push({
+                amount,
+                type,
+                description,
+                createdAt: Date.now()
+            });
+            updateCoinsDisplay();
+        }
+
+        async function saveQuest(event) {
+            event.preventDefault();
+            
+            const questId = document.getElementById('questId').value;
+            const title = document.getElementById('questTitle').value.trim();
+            const category = document.getElementById('questCategory').value;
+            const selectedDays = [];
+            
+            document.querySelectorAll('.day-checkbox:checked').forEach(cb => {
+                selectedDays.push(parseInt(cb.value));
+            });
+            
+            if (selectedDays.length === 0) {
+                alert(currentLang === 'ms' ? 'Sila pilih sekurang-kurangnya satu hari' : 'Please select at least one day');
+                return;
+            }
+            
+            const questData = {
+                title,
+                category,
+                daysOfWeek: selectedDays,
+                updatedAt: Date.now()
+            };
+            
+            if (questId) {
+                await db.ref(`questTemplates/${currentUser.uid}/${questId}`).update(questData);
+            } else {
+                questData.createdAt = Date.now();
+                await db.ref(`questTemplates/${currentUser.uid}`).push(questData);
+            }
+            
+            closeQuestModal();
+            await loadQuestTemplates();
+            await generateTodayQuests();
+            renderScreen();
+        }
+
+        async function deleteQuest(questId) {
+            await db.ref(`questTemplates/${currentUser.uid}/${questId}`).remove();
+            await loadQuestTemplates();
+            renderScreen();
+        }
+
+        // UI Functions
+        function updateHeaderDate() {
+            const t = translations[currentLang];
+            const now = new Date();
+            const dayName = t.daysFull[now.getDay() === 0 ? 6 : now.getDay() - 1];
+            const date = now.getDate();
+            const month = t.months[now.getMonth()];
+            const year = now.getFullYear();
+            
+            document.getElementById('headerDate').textContent = `${dayName}, ${date} ${month} ${year}`;
+        }
+
+        function updateCoinsDisplay() {
+            document.getElementById('coinsAmount').textContent = userCoins;
+            document.getElementById('coinsRM').textContent = `= RM${userCoins}`;
+        }
+
+        function renderDaysSelector() {
+            const t = translations[currentLang];
+            const container = document.getElementById('daysSelector');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 7; i++) {
+                const html = `
+                    <input type="checkbox" class="day-checkbox" id="day${i}" value="${i}">
+                    <label class="day-label" for="day${i}">${t.days[i-1]}</label>
+                `;
+                container.innerHTML += html;
+            }
+        }
+
+        function switchScreen(screen) {
+            currentScreen = screen;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.screen === screen);
+            });
+            
+            document.getElementById('fabBtn').classList.toggle('hidden', screen === 'history' || screen === 'settings');
+            
+            renderScreen();
+        }
+
+        function renderScreen() {
+            const content = document.getElementById('mainContent');
+            
+            switch(currentScreen) {
+                case 'today':
+                    renderTodayScreen(content);
+                    break;
+                case 'quests':
+                    renderQuestsScreen(content);
+                    break;
+                case 'history':
+                    renderHistoryScreen(content);
+                    break;
+                case 'settings':
+                    renderSettingsScreen(content);
+                    break;
+            }
+        }
+
+        function renderTodayScreen(container) {
+            const t = translations[currentLang];
+            const completedCount = todayQuests.filter(q => q.status === 'completed').length;
+            const totalCount = todayQuests.length;
+            const percentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+            
+            // Week summary
+            const weekSummary = getWeekSummary();
+            
+            let html = `
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span class="progress-title">${t.todayQuest}</span>
+                        <span class="progress-count">${completedCount}/${totalCount}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                    </div>
+                    <div class="week-summary">
+                        ${weekSummary.map((day, i) => `
+                            <div class="week-day ${day.status}">
+                                <span class="week-day-name">${t.days[i]}</span>
+                                <span class="week-day-icon">${day.icon}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            if (todayQuests.length === 0) {
+                html += `
+                    <div class="empty-state">
+                        <div class="empty-icon">📜</div>
+                        <div class="empty-title">${t.noQuests}</div>
+                        <p>${t.addFirstQuest}</p>
+                    </div>
+                `;
+            } else {
+                // Group by category
+                const categories = {};
+                todayQuests.forEach(quest => {
+                    if (!categories[quest.category]) {
+                        categories[quest.category] = [];
+                    }
+                    categories[quest.category].push(quest);
+                });
+                
+                html += '<div class="quest-section">';
+                
+                for (const [category, quests] of Object.entries(categories)) {
+                    const catName = t[`cat${category.charAt(0).toUpperCase() + category.slice(1)}`] || category;
+                    
+                    html += `<div class="section-header"><h3 class="section-title">${catName}</h3></div>`;
+                    html += '<div class="quest-list">';
+                    
+                    quests.forEach(quest => {
+                        html += `
+                            <div class="quest-item ${quest.status}" onclick="toggleQuestComplete('${quest.id}')">
+                                <div class="quest-checkbox"></div>
+                                <div class="quest-content">
+                                    <div class="quest-title">${quest.title}</div>
+                                    <div class="quest-meta">
+                                        <span class="quest-category category-${quest.category}">${getCategoryIcon(quest.category)}</span>
+                                        ${quest.status === 'overdue' ? `<span class="overdue-badge">${t.overdue}</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function renderQuestsScreen(container) {
+            const t = translations[currentLang];
+            
+            let html = `
+                <div class="section-header">
+                    <h3 class="section-title">${t.questTemplates}</h3>
+                </div>
+            `;
+            
+            if (questTemplates.length === 0) {
+                html += `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <div class="empty-title">${t.noTemplates}</div>
+                        <p>${t.addFirstQuest}</p>
+                    </div>
+                `;
+            } else {
+                questTemplates.forEach(template => {
+                    const catName = t[`cat${template.category.charAt(0).toUpperCase() + template.category.slice(1)}`] || template.category;
+                    
+                    html += `
+                        <div class="template-item">
+                            <div class="template-header">
+                                <div>
+                                    <div class="template-title">${template.title}</div>
+                                    <span class="quest-category category-${template.category}">${catName}</span>
+                                </div>
+                                <div class="quest-actions">
+                                    <button class="quest-action-btn" onclick="openEditQuestModal('${template.id}')">✏️</button>
+                                    <button class="quest-action-btn delete" onclick="openDeleteModal('${template.id}')">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="template-days">
+                                ${template.daysOfWeek.map(d => `<span class="template-day">${t.days[d-1]}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+
+        async function renderHistoryScreen(container) {
+            const t = translations[currentLang];
+            
+            let html = `
+                <div class="section-header">
+                    <h3 class="section-title">${t.history30}</h3>
+                </div>
+            `;
+            
+            const today = new Date();
+            let hasHistory = false;
+            
+            for (let i = 0; i < 30; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const dateStr = getDateString(date);
+                
+                const snapshot = await db.ref(`dailyQuests/${currentUser.uid}/${dateStr}`).once('value');
+                
+                if (snapshot.exists()) {
+                    hasHistory = true;
+                    const quests = [];
+                    snapshot.forEach(child => {
+                        quests.push(child.val());
+                    });
+                    
+                    const completed = quests.filter(q => q.status === 'completed').length;
+                    const total = quests.length;
+                    const allDone = completed === total && total > 0;
+                    
+                    const dayName = t.daysFull[date.getDay() === 0 ? 6 : date.getDay() - 1];
+                    const dateDisplay = `${date.getDate()} ${t.months[date.getMonth()]}`;
+                    
+                    html += `
+                        <div class="history-item">
+                            <div class="history-date">
+                                <span>${dayName}, ${dateDisplay}</span>
+                                ${allDone ? `<span class="history-coins positive">+10 🪙</span>` : 
+                                  quests.some(q => q.status === 'failed') ? `<span class="history-coins negative">-10 🪙</span>` : ''}
+                            </div>
+                            <div class="history-quests">
+                                ${completed}/${total} ${t.completed.toLowerCase()} • 
+                                ${quests.map(q => `${getCategoryIcon(q.category)} ${q.title}`).join(', ')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            if (!hasHistory) {
+                html += `
+                    <div class="empty-state">
+                        <div class="empty-icon">📜</div>
+                        <div class="empty-title">${t.noHistory}</div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function renderSettingsScreen(container) {
+            const t = translations[currentLang];
+            
+            const html = `
+                <div class="settings-section">
+                    <div class="settings-title">${t.account}</div>
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            ${currentUser.photoURL ? `<img src="${currentUser.photoURL}" alt="">` : '👤'}
+                        </div>
+                        <div>
+                            <div class="user-name">${currentUser.displayName || 'User'}</div>
+                            <div class="user-email">${currentUser.email}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="settings-title">${t.language}</div>
+                    <div class="settings-item">
+                        <span class="settings-item-label">${t.language}</span>
+                        <div class="lang-toggle">
+                            <button class="lang-btn ${currentLang === 'ms' ? 'active' : ''}" onclick="setLanguage('ms')">BM</button>
+                            <button class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="setLanguage('en')">EN</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="settings-title">🪙 Coins</div>
+                    <div class="settings-item">
+                        <span class="settings-item-label">Total Coins</span>
+                        <span class="coins-amount">${userCoins} 🪙</span>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-item-label">= RM</span>
+                        <span>RM${userCoins}</span>
+                    </div>
+                </div>
+                
+                <button class="btn btn-danger" onclick="signOut()" style="margin-top: 24px;">
+                    ${t.signOut}
+                </button>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        async function setLanguage(lang) {
+            currentLang = lang;
+            await db.ref(`users/${currentUser.uid}/language`).set(lang);
+            applyTranslations();
+            updateHeaderDate();
+            renderDaysSelector();
+            renderScreen();
+        }
+
+        function applyTranslations() {
+            const t = translations[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (t[key]) {
+                    if (el.tagName === 'INPUT') {
+                        el.placeholder = t[key];
+                    } else {
+                        el.textContent = t[key];
+                    }
+                }
+            });
+            
+            // Update select options
+            const categorySelect = document.getElementById('questCategory');
+            if (categorySelect) {
+                categorySelect.innerHTML = `
+                    <option value="home">${t.catHome}</option>
+                    <option value="work">${t.catWork}</option>
+                    <option value="health">${t.catHealth}</option>
+                    <option value="finance">${t.catFinance}</option>
+                    <option value="learning">${t.catLearning}</option>
+                    <option value="personal">${t.catPersonal}</option>
+                `;
+            }
+        }
+
+        // Modal Functions
+        function openAddQuestModal() {
+            const t = translations[currentLang];
+            document.getElementById('questModalTitle').textContent = t.addQuest;
+            document.getElementById('questId').value = '';
+            document.getElementById('questTitle').value = '';
+            document.getElementById('questCategory').value = 'home';
+            document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('questModal').classList.add('active');
+        }
+
+        function openEditQuestModal(templateId) {
+            const t = translations[currentLang];
+            const template = questTemplates.find(q => q.id === templateId);
+            
+            if (template) {
+                document.getElementById('questModalTitle').textContent = t.editQuest;
+                document.getElementById('questId').value = templateId;
+                document.getElementById('questTitle').value = template.title;
+                document.getElementById('questCategory').value = template.category;
+                
+                document.querySelectorAll('.day-checkbox').forEach(cb => {
+                    cb.checked = template.daysOfWeek.includes(parseInt(cb.value));
+                });
+                
+                document.getElementById('questModal').classList.add('active');
+            }
+        }
+
+        function closeQuestModal() {
+            document.getElementById('questModal').classList.remove('active');
+        }
+
+        function openDeleteModal(questId) {
+            deleteTarget = questId;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            deleteTarget = null;
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        function confirmDelete() {
+            if (deleteTarget) {
+                deleteQuest(deleteTarget);
+                closeDeleteModal();
+            }
+        }
+
+        // Helper Functions
+        function getDateString(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                home: '🏠',
+                work: '💼',
+                health: '💪',
+                finance: '💰',
+                learning: '📚',
+                personal: '🎯'
+            };
+            return icons[category] || '📋';
+        }
+
+        function getWeekSummary() {
+            const today = new Date();
+            const currentDay = today.getDay();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
+            
+            const summary = [];
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(monday);
+                date.setDate(monday.getDate() + i);
+                const dateStr = getDateString(date);
+                const isToday = dateStr === getDateString(today);
+                const isFuture = date > today;
+                
+                if (isFuture) {
+                    summary.push({ status: 'future', icon: '○' });
+                } else if (isToday) {
+                    const allDone = todayQuests.length > 0 && todayQuests.every(q => q.status === 'completed');
+                    summary.push({ status: 'today', icon: allDone ? '✓' : '•' });
+                } else {
+                    // Would need to check database - simplified for now
+                    summary.push({ status: 'future', icon: '○' });
+                }
+            }
+            
+            return summary;
+        }
+
+        function celebrate() {
+            const container = document.getElementById('celebration');
+            const colors = ['#d4af37', '#4ade80', '#60a5fa', '#f472b6', '#fbbf24'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                container.appendChild(confetti);
+            }
+            
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
