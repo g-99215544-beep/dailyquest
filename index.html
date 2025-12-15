@@ -1314,13 +1314,16 @@
             const dayOfWeek = new Date().getDay();
             const adjustedDay = dayOfWeek === 0 ? 7 : dayOfWeek;
 
-            // Check if today's quests already exist
+            // Get existing quests for today
             const snapshot = await db.ref(`dailyQuests/${currentUser.uid}/${today}`).once('value');
-            
-            if (!snapshot.exists()) {
-                // Generate quests for today
-                for (const template of questTemplates) {
-                    if (template.daysOfWeek && template.daysOfWeek.includes(adjustedDay)) {
+            const existingQuests = snapshot.val() || {};
+            const existingTemplateIds = Object.values(existingQuests).map(q => q.templateId);
+
+            // Generate quests for today - check each template
+            for (const template of questTemplates) {
+                if (template.daysOfWeek && template.daysOfWeek.includes(adjustedDay)) {
+                    // Only add if not already exists
+                    if (!existingTemplateIds.includes(template.id)) {
                         await db.ref(`dailyQuests/${currentUser.uid}/${today}/${template.id}`).set({
                             templateId: template.id,
                             title: template.title,
