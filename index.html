@@ -1576,42 +1576,24 @@
                     </div>
                 `;
             } else {
-                // Group by category
-                const categories = {};
+                html += '<div class="quest-section"><div class="quest-list">';
+                
                 todayQuests.forEach(quest => {
-                    if (!categories[quest.category]) {
-                        categories[quest.category] = [];
-                    }
-                    categories[quest.category].push(quest);
-                });
-                
-                html += '<div class="quest-section">';
-                
-                for (const [category, quests] of Object.entries(categories)) {
-                    const catName = t[`cat${category.charAt(0).toUpperCase() + category.slice(1)}`] || category;
-                    
-                    html += `<div class="section-header"><h3 class="section-title">${catName}</h3></div>`;
-                    html += '<div class="quest-list">';
-                    
-                    quests.forEach(quest => {
-                        html += `
-                            <div class="quest-item ${quest.status}" onclick="toggleQuestComplete('${quest.id}')">
-                                <div class="quest-checkbox"></div>
-                                <div class="quest-content">
-                                    <div class="quest-title">${quest.title}</div>
-                                    <div class="quest-meta">
-                                        <span class="quest-category category-${quest.category}">${getCategoryIcon(quest.category)}</span>
-                                        ${quest.status === 'overdue' ? `<span class="overdue-badge">${t.overdue}</span>` : ''}
-                                    </div>
+                    html += `
+                        <div class="quest-item ${quest.status}" onclick="toggleQuestComplete('${quest.id}')">
+                            <div class="quest-checkbox"></div>
+                            <div class="quest-content">
+                                <div class="quest-title">${quest.title}</div>
+                                <div class="quest-meta">
+                                    <span class="quest-category category-${quest.category}">${getCategoryIcon(quest.category)}</span>
+                                    ${quest.status === 'overdue' ? `<span class="overdue-badge">${t.overdue}</span>` : ''}
                                 </div>
                             </div>
-                        `;
-                    });
-                    
-                    html += '</div>';
-                }
+                        </div>
+                    `;
+                });
                 
-                html += '</div>';
+                html += '</div></div>';
             }
             
             container.innerHTML = html;
