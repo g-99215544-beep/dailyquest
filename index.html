@@ -23,25 +23,16 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
     <style>
         :root {
-            --primary: var(--primary);
-            --primary-dark: #e85a8a;
-            --secondary: #fff5f7;
-            --bg-dark: #fef7f0;
+            --primary: #00b894;
+            --primary-dark: #00a381;
+            --primary-light: #55efc4;
+            --bg-gradient: linear-gradient(135deg, #f8f9fa 0%, #e8f5e9 50%, #f1f8f4 100%);
             --bg-card: #ffffff;
-            --bg-card-hover: #fff0f5;
-            --text-light: #4a4a4a;
-            --text-muted: #888888;
-            --success: #4ade80;
-            --danger: #ff6b6b;
-            --warning: #ffc078;
-            --category-home: #ff9ff3;
-            --category-work: #74b9ff;
-            --category-health: #55efc4;
-            --category-finance: #ffeaa7;
-            --category-learning: #a29bfe;
-            --category-personal: #fd79a8;
-            --gradient-start: #ffecd2;
-            --gradient-end: #fcb69f;
+            --text-dark: #2d3436;
+            --text-muted: #636e72;
+            --success: #00b894;
+            --danger: #e74c3c;
+            --warning: #f39c12;
         }
 
         * {
@@ -52,8 +43,8 @@
 
         body {
             font-family: 'Quicksand', sans-serif;
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ffeaa7 100%);
-            color: var(--text-light);
+            background: var(--bg-gradient);
+            color: var(--text-dark);
             min-height: 100vh;
             background-attachment: fixed;
         }
@@ -74,7 +65,7 @@
             min-height: 100vh;
             text-align: center;
             padding: 24px;
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #a8edea 100%);
+            background: var(--bg-gradient);
         }
 
         .login-logo {
@@ -87,7 +78,7 @@
             justify-content: center;
             font-size: 48px;
             margin-bottom: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 184, 148, 0.3);
             animation: float 3s ease-in-out infinite;
         }
 
@@ -764,26 +755,83 @@
 
         /* History */
         .history-item {
-            background: white;
+            background: var(--bg-card);
             border-radius: 16px;
-            padding: 16px;
+            padding: 0;
             margin-bottom: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .history-date {
-            font-weight: 700;
-            margin-bottom: 8px;
+        .history-item:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .history-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: #444;
+            padding: 14px 16px;
+        }
+
+        .history-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .history-status-icon {
+            font-size: 20px;
+        }
+
+        .history-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .history-date-text {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .history-summary {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .history-summary.success {
+            color: var(--success);
+        }
+
+        .history-summary.failed {
+            color: var(--danger);
+        }
+
+        .history-summary.pending {
+            color: var(--warning);
+        }
+
+        .history-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-arrow {
+            color: var(--text-muted);
+            font-size: 12px;
+            transition: transform 0.2s;
         }
 
         .history-coins {
-            font-size: 14px;
+            font-size: 13px;
             padding: 4px 10px;
             border-radius: 8px;
+            font-weight: 600;
         }
 
         .history-coins.positive {
@@ -796,8 +844,55 @@
             color: #d32f2f;
         }
 
-        .history-quests {
-            font-size: 13px;
+        .history-details {
+            border-top: 1px solid rgba(0,0,0,0.05);
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.02);
+        }
+
+        .history-quest-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .history-quest-item:not(:last-child) {
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .history-quest-check {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .history-quest-item.done .history-quest-check {
+            background: var(--success);
+            color: white;
+        }
+
+        .history-quest-item.undone .history-quest-check {
+            background: #e0e0e0;
+            color: #999;
+        }
+
+        .history-quest-icon {
+            font-size: 14px;
+        }
+
+        .history-quest-title {
+            flex: 1;
+            color: var(--text-dark);
+        }
+
+        .history-quest-item.undone .history-quest-title {
             color: var(--text-muted);
         }
 
@@ -814,7 +909,7 @@
             font-weight: 700;
             margin-bottom: 16px;
             font-size: 14px;
-            color: #888;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -824,7 +919,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
         }
 
         .settings-item:last-child {
@@ -833,7 +928,7 @@
 
         .settings-item-label {
             font-weight: 600;
-            color: #555;
+            color: var(--text-dark);
         }
 
         .toggle {
@@ -1655,7 +1750,6 @@
         let currentUser = null;
         let currentScreen = 'today';
         let currentLang = 'ms';
-        let currentTheme = 'fresh';
         let userCoins = 0;
         let questTemplates = [];
         let todayQuests = [];
@@ -1969,7 +2063,6 @@
             if (data) {
                 userCoins = data.totalCoins || 0;
                 currentLang = data.language || 'ms';
-                currentTheme = data.theme || 'fresh';
                 verifierEmail = data.verifierEmail || null;
                 verifierUid = data.verifierUid || null;
             } else {
@@ -1977,28 +2070,14 @@
                     email: currentUser.email,
                     totalCoins: 0,
                     language: 'ms',
-                    theme: 'fresh',
                     createdAt: Date.now()
                 });
                 userCoins = 0;
-                currentTheme = 'fresh';
             }
             updateCoinsDisplay();
-            applyTheme(currentTheme);
             
             // Load users that this user needs to verify
             await loadUsersToVerify();
-        }
-        
-        function applyTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            currentTheme = theme;
-        }
-        
-        async function setTheme(theme) {
-            applyTheme(theme);
-            await db.ref(`users/${currentUser.uid}/theme`).set(theme);
-            renderScreen();
         }
         
         async function loadUsersToVerify() {
@@ -2639,24 +2718,24 @@
             renderScreen();
         }
 
-        function renderScreen() {
+        async function renderScreen() {
             const content = document.getElementById('mainContent');
             
             switch(currentScreen) {
                 case 'today':
-                    renderTodayScreen(content);
+                    await renderTodayScreen(content);
                     break;
                 case 'quests':
                     renderQuestsScreen(content);
                     break;
                 case 'history':
-                    renderHistoryScreen(content);
+                    await renderHistoryScreen(content);
                     break;
                 case 'settings':
                     renderSettingsScreen(content);
                     break;
                 case 'verify':
-                    renderVerifyScreen(content);
+                    await renderVerifyScreen(content);
                     break;
             }
         }
@@ -2862,23 +2941,57 @@
                         quests.push(child.val());
                     });
                     
-                    const completed = quests.filter(q => q.status === 'completed').length;
+                    const completedQuests = quests.filter(q => q.status === 'completed' || q.status === 'verified' || q.status === 'pending_verification');
+                    const completed = completedQuests.length;
                     const total = quests.length;
                     const allDone = completed === total && total > 0;
+                    const hasFailed = quests.some(q => q.status === 'failed');
                     
                     const dayName = t.daysFull[date.getDay() === 0 ? 6 : date.getDay() - 1];
                     const dateDisplay = `${date.getDate()} ${t.months[date.getMonth()]}`;
                     
+                    // Determine status icon and color
+                    let statusIcon, statusClass;
+                    if (allDone) {
+                        statusIcon = '✅';
+                        statusClass = 'success';
+                    } else if (hasFailed) {
+                        statusIcon = '❌';
+                        statusClass = 'failed';
+                    } else {
+                        statusIcon = '⏳';
+                        statusClass = 'pending';
+                    }
+                    
+                    const itemId = `history-${dateStr}`;
+                    
                     html += `
-                        <div class="history-item">
-                            <div class="history-date">
-                                <span>${dayName}, ${dateDisplay}</span>
-                                ${allDone ? `<span class="history-coins positive">+10 🪙</span>` : 
-                                  quests.some(q => q.status === 'failed') ? `<span class="history-coins negative">-10 🪙</span>` : ''}
+                        <div class="history-item" onclick="toggleHistoryItem('${itemId}')">
+                            <div class="history-header">
+                                <div class="history-left">
+                                    <span class="history-status-icon">${statusIcon}</span>
+                                    <div class="history-info">
+                                        <span class="history-date-text">${dayName}, ${dateDisplay}</span>
+                                        <span class="history-summary ${statusClass}">${completed}/${total} ${t.completed.toLowerCase()}</span>
+                                    </div>
+                                </div>
+                                <div class="history-right">
+                                    ${allDone ? `<span class="history-coins positive">+10 🪙</span>` : 
+                                      hasFailed ? `<span class="history-coins negative">-10 🪙</span>` : ''}
+                                    <span class="history-arrow" id="arrow-${itemId}">▼</span>
+                                </div>
                             </div>
-                            <div class="history-quests">
-                                ${completed}/${total} ${t.completed.toLowerCase()} • 
-                                ${quests.map(q => `${getCategoryIcon(q.category)} ${q.title}`).join(', ')}
+                            <div class="history-details hidden" id="${itemId}">
+                                ${quests.map(q => {
+                                    const qStatus = (q.status === 'completed' || q.status === 'verified' || q.status === 'pending_verification') ? 'done' : 'undone';
+                                    return `
+                                        <div class="history-quest-item ${qStatus}">
+                                            <span class="history-quest-check">${qStatus === 'done' ? '✓' : '○'}</span>
+                                            <span class="history-quest-icon">${getCategoryIcon(q.category)}</span>
+                                            <span class="history-quest-title">${q.title}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
                             </div>
                         </div>
                     `;
@@ -2895,6 +3008,20 @@
             }
             
             container.innerHTML = html;
+        }
+        
+        function toggleHistoryItem(itemId) {
+            const details = document.getElementById(itemId);
+            const arrow = document.getElementById('arrow-' + itemId);
+            
+            if (details.classList.contains('hidden')) {
+                details.classList.remove('hidden');
+                arrow.textContent = '▲';
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                details.classList.add('hidden');
+                arrow.textContent = '▼';
+            }
         }
 
         function renderSettingsScreen(container) {
@@ -2953,36 +3080,6 @@
                             <button class="lang-btn ${currentLang === 'ms' ? 'active' : ''}" onclick="setLanguage('ms')">BM</button>
                             <button class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="setLanguage('en')">EN</button>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="settings-section">
-                    <div class="settings-title">🎨 ${currentLang === 'ms' ? 'Tema' : 'Theme'}</div>
-                    <div class="theme-selector">
-                        <button class="theme-btn ${currentTheme === 'fresh' ? 'active' : ''}" onclick="setTheme('fresh')" style="--theme-color: #00b894;">
-                            <span class="theme-color"></span>
-                            <span>Fresh</span>
-                        </button>
-                        <button class="theme-btn ${currentTheme === 'ocean' ? 'active' : ''}" onclick="setTheme('ocean')" style="--theme-color: #0984e3;">
-                            <span class="theme-color"></span>
-                            <span>Ocean</span>
-                        </button>
-                        <button class="theme-btn ${currentTheme === 'sunset' ? 'active' : ''}" onclick="setTheme('sunset')" style="--theme-color: #e17055;">
-                            <span class="theme-color"></span>
-                            <span>Sunset</span>
-                        </button>
-                        <button class="theme-btn ${currentTheme === 'lavender' ? 'active' : ''}" onclick="setTheme('lavender')" style="--theme-color: #a29bfe;">
-                            <span class="theme-color"></span>
-                            <span>Lavender</span>
-                        </button>
-                        <button class="theme-btn ${currentTheme === 'rose' ? 'active' : ''}" onclick="setTheme('rose')" style="--theme-color: var(--primary);">
-                            <span class="theme-color"></span>
-                            <span>Rose</span>
-                        </button>
-                        <button class="theme-btn ${currentTheme === 'dark' ? 'active' : ''}" onclick="setTheme('dark')" style="--theme-color: #6c5ce7;">
-                            <span class="theme-color"></span>
-                            <span>Dark</span>
-                        </button>
                     </div>
                 </div>
                 
