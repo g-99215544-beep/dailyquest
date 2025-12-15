@@ -23,23 +23,25 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
     <style>
         :root {
-            --primary: #d4af37;
-            --primary-dark: #b8960c;
-            --secondary: #1a1a2e;
-            --bg-dark: #0f0f1a;
-            --bg-card: #16213e;
-            --bg-card-hover: #1a2747;
-            --text-light: #e8e8e8;
-            --text-muted: #8892b0;
+            --primary: #ff6b9d;
+            --primary-dark: #e85a8a;
+            --secondary: #fff5f7;
+            --bg-dark: #fef7f0;
+            --bg-card: #ffffff;
+            --bg-card-hover: #fff0f5;
+            --text-light: #4a4a4a;
+            --text-muted: #888888;
             --success: #4ade80;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --category-home: #f472b6;
-            --category-work: #60a5fa;
-            --category-health: #4ade80;
-            --category-finance: #fbbf24;
-            --category-learning: #a78bfa;
-            --category-personal: #fb923c;
+            --danger: #ff6b6b;
+            --warning: #ffc078;
+            --category-home: #ff9ff3;
+            --category-work: #74b9ff;
+            --category-health: #55efc4;
+            --category-finance: #ffeaa7;
+            --category-learning: #a29bfe;
+            --category-personal: #fd79a8;
+            --gradient-start: #ffecd2;
+            --gradient-end: #fcb69f;
         }
 
         * {
@@ -50,13 +52,9 @@
 
         body {
             font-family: 'Quicksand', sans-serif;
-            background: var(--bg-dark);
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ffeaa7 100%);
             color: var(--text-light);
             min-height: 100vh;
-            background-image: 
-                radial-gradient(ellipse at top, #1a1a3e 0%, transparent 50%),
-                radial-gradient(ellipse at bottom, #0d1b2a 0%, transparent 50%),
-                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
             background-attachment: fixed;
         }
 
@@ -76,19 +74,20 @@
             min-height: 100vh;
             text-align: center;
             padding: 24px;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #a8edea 100%);
         }
 
         .login-logo {
             width: 120px;
             height: 120px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
             border-radius: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 48px;
             margin-bottom: 24px;
-            box-shadow: 0 8px 32px rgba(212, 175, 55, 0.3);
+            box-shadow: 0 8px 32px rgba(255, 107, 157, 0.3);
             animation: float 3s ease-in-out infinite;
         }
 
@@ -101,13 +100,13 @@
             font-family: 'Cinzel', serif;
             font-size: 32px;
             font-weight: 700;
-            color: var(--primary);
+            color: #ff6b9d;
             margin-bottom: 8px;
-            text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+            text-shadow: 0 2px 10px rgba(255, 107, 157, 0.3);
         }
 
         .login-subtitle {
-            color: var(--text-muted);
+            color: #666;
             margin-bottom: 40px;
             font-size: 14px;
         }
@@ -125,12 +124,12 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .google-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 20px rgba(255, 107, 157, 0.3);
         }
 
         .google-btn svg {
@@ -145,21 +144,21 @@
             align-items: center;
             margin-bottom: 20px;
             padding: 16px;
-            background: var(--bg-card);
-            border-radius: 16px;
-            border: 1px solid rgba(212, 175, 55, 0.1);
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(255, 107, 157, 0.15);
         }
 
         .header-left h1 {
             font-family: 'Cinzel', serif;
             font-size: 20px;
-            color: var(--primary);
+            color: #ff6b9d;
             margin-bottom: 4px;
         }
 
         .header-date {
             font-size: 13px;
-            color: var(--text-muted);
+            color: #888;
         }
 
         .header-right {
@@ -172,10 +171,10 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%);
+            background: linear-gradient(135deg, #fff9c4 0%, #ffe082 100%);
             padding: 8px 16px;
             border-radius: 20px;
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            box-shadow: 0 2px 10px rgba(255, 193, 7, 0.3);
         }
 
         .coins-icon {
@@ -184,19 +183,19 @@
 
         .coins-amount {
             font-weight: 700;
-            color: var(--primary);
+            color: #f57c00;
             font-size: 16px;
         }
 
         .coins-rm {
             font-size: 11px;
-            color: var(--text-muted);
+            color: #888;
         }
 
         .settings-btn {
             background: none;
             border: none;
-            color: var(--text-muted);
+            color: #888;
             font-size: 20px;
             cursor: pointer;
             padding: 8px;
@@ -205,17 +204,17 @@
         }
 
         .settings-btn:hover {
-            background: rgba(255,255,255,0.1);
-            color: var(--text-light);
+            background: rgba(255, 107, 157, 0.1);
+            color: #ff6b9d;
         }
 
         /* Progress Section */
         .progress-section {
-            background: var(--bg-card);
-            border-radius: 16px;
+            background: white;
+            border-radius: 20px;
             padding: 20px;
             margin-bottom: 20px;
-            border: 1px solid rgba(212, 175, 55, 0.1);
+            box-shadow: 0 4px 20px rgba(255, 107, 157, 0.1);
         }
 
         .progress-header {
@@ -228,23 +227,24 @@
         .progress-title {
             font-weight: 600;
             font-size: 14px;
+            color: #555;
         }
 
         .progress-count {
-            color: var(--primary);
+            color: #ff6b9d;
             font-weight: 700;
         }
 
         .progress-bar {
             height: 12px;
-            background: rgba(255,255,255,0.1);
+            background: #f0f0f0;
             border-radius: 6px;
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
             border-radius: 6px;
             transition: width 0.5s ease;
             position: relative;
@@ -257,7 +257,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
             animation: shimmer 2s infinite;
         }
 
@@ -273,37 +273,37 @@
             gap: 6px;
             margin-top: 16px;
             padding-top: 16px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 1px solid #f0f0f0;
         }
 
         .week-day {
             flex: 1;
             text-align: center;
             padding: 8px 4px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 11px;
             font-weight: 600;
         }
 
         .week-day.completed {
-            background: rgba(74, 222, 128, 0.2);
-            color: var(--success);
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+            color: #2d7a3a;
         }
 
         .week-day.failed {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
+            background: #ffe0e0;
+            color: #d32f2f;
         }
 
         .week-day.today {
-            background: rgba(212, 175, 55, 0.2);
-            color: var(--primary);
-            border: 1px solid var(--primary);
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: white;
+            box-shadow: 0 2px 10px rgba(255, 107, 157, 0.3);
         }
 
         .week-day.future {
-            background: rgba(255,255,255,0.05);
-            color: var(--text-muted);
+            background: #f5f5f5;
+            color: #aaa;
         }
 
         .week-day-name {
@@ -330,7 +330,7 @@
         .section-title {
             font-family: 'Cinzel', serif;
             font-size: 16px;
-            color: var(--primary);
+            color: #ff6b9d;
         }
 
         .quest-list {
@@ -340,39 +340,42 @@
         }
 
         .quest-item {
-            background: var(--bg-card);
-            border-radius: 12px;
+            background: white;
+            border-radius: 16px;
             padding: 16px;
             display: flex;
             align-items: center;
             gap: 14px;
-            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
             cursor: pointer;
         }
 
         .quest-item:hover {
-            background: var(--bg-card-hover);
             transform: translateX(4px);
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.15);
         }
 
         .quest-item.completed {
-            opacity: 0.6;
+            opacity: 0.7;
+            background: #f8fff8;
         }
 
         .quest-item.completed .quest-title {
             text-decoration: line-through;
+            color: #888;
         }
 
         .quest-item.overdue {
-            border-left: 3px solid var(--danger);
+            border-left: 4px solid #ff6b6b;
+            background: #fff5f5;
         }
 
         .quest-checkbox {
             width: 28px;
             height: 28px;
-            border: 2px solid var(--text-muted);
-            border-radius: 8px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -381,8 +384,8 @@
         }
 
         .quest-item.completed .quest-checkbox {
-            background: var(--success);
-            border-color: var(--success);
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            border-color: #22c55e;
         }
 
         .quest-checkbox::after {
@@ -407,6 +410,7 @@
             font-weight: 600;
             margin-bottom: 4px;
             font-size: 15px;
+            color: #444;
         }
 
         .quest-meta {
@@ -414,6 +418,7 @@
             align-items: center;
             gap: 8px;
             font-size: 12px;
+            flex-wrap: wrap;
         }
 
         .quest-category {
@@ -480,7 +485,7 @@
         .empty-title {
             font-size: 18px;
             margin-bottom: 8px;
-            color: var(--text-light);
+            color: #666;
         }
 
         /* Bottom Navigation */
@@ -489,12 +494,13 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: var(--bg-card);
-            border-top: 1px solid rgba(255,255,255,0.1);
+            background: white;
+            border-top: 1px solid #f0f0f0;
             display: flex;
             justify-content: space-around;
             padding: 12px 16px;
             padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
         }
 
         .nav-item {
@@ -504,7 +510,7 @@
             gap: 4px;
             background: none;
             border: none;
-            color: var(--text-muted);
+            color: #aaa;
             font-size: 11px;
             cursor: pointer;
             padding: 8px 16px;
@@ -513,12 +519,12 @@
         }
 
         .nav-item.active {
-            color: var(--primary);
-            background: rgba(212, 175, 55, 0.1);
+            color: #ff6b9d;
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.1) 0%, rgba(254, 207, 239, 0.2) 100%);
         }
 
         .nav-item:hover:not(.active) {
-            color: var(--text-light);
+            color: #ff6b9d;
         }
 
         .nav-icon {
@@ -532,19 +538,20 @@
             right: 20px;
             width: 56px;
             height: 56px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
             border: none;
-            border-radius: 16px;
-            color: var(--secondary);
+            border-radius: 50%;
+            color: white;
             font-size: 28px;
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+            box-shadow: 0 4px 20px rgba(255, 107, 157, 0.4);
             transition: all 0.3s ease;
             z-index: 100;
         }
 
         .fab:hover {
             transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 6px 25px rgba(255, 107, 157, 0.5);
         }
 
         /* Modal */
@@ -554,7 +561,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.5);
             display: flex;
             align-items: flex-end;
             justify-content: center;
@@ -570,7 +577,7 @@
         }
 
         .modal {
-            background: var(--bg-card);
+            background: white;
             width: 100%;
             max-width: 480px;
             max-height: 90vh;
@@ -595,13 +602,13 @@
         .modal-title {
             font-family: 'Cinzel', serif;
             font-size: 20px;
-            color: var(--primary);
+            color: #ff6b9d;
         }
 
         .modal-close {
             background: none;
             border: none;
-            color: var(--text-muted);
+            color: #aaa;
             font-size: 24px;
             cursor: pointer;
             padding: 4px;
@@ -616,15 +623,16 @@
             margin-bottom: 8px;
             font-weight: 600;
             font-size: 14px;
+            color: #555;
         }
 
         .form-input {
             width: 100%;
             padding: 14px 16px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #f9f9f9;
+            border: 2px solid #eee;
             border-radius: 12px;
-            color: var(--text-light);
+            color: #444;
             font-size: 16px;
             font-family: inherit;
             transition: all 0.2s;
@@ -632,17 +640,17 @@
 
         .form-input:focus {
             outline: none;
-            border-color: var(--primary);
-            background: rgba(255,255,255,0.08);
+            border-color: #ff6b9d;
+            background: white;
         }
 
         .form-select {
             width: 100%;
             padding: 14px 16px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #f9f9f9;
+            border: 2px solid #eee;
             border-radius: 12px;
-            color: var(--text-light);
+            color: #444;
             font-size: 16px;
             font-family: inherit;
             cursor: pointer;
@@ -650,7 +658,7 @@
 
         .form-select:focus {
             outline: none;
-            border-color: var(--primary);
+            border-color: #ff6b9d;
         }
 
         .days-selector {
@@ -665,19 +673,20 @@
 
         .day-label {
             padding: 10px 14px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #f5f5f5;
+            border: 2px solid #eee;
             border-radius: 10px;
             cursor: pointer;
             font-size: 13px;
             font-weight: 600;
+            color: #666;
             transition: all 0.2s;
         }
 
         .day-checkbox:checked + .day-label {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: var(--primary);
-            color: var(--primary);
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            border-color: #ff6b9d;
+            color: white;
         }
 
         .btn {
@@ -693,27 +702,27 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--secondary);
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
         }
 
         .btn-danger {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
+            background: #fff0f0;
+            color: #ff6b6b;
         }
 
         .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.3);
+            background: #ffe0e0;
         }
 
         .btn-secondary {
-            background: rgba(255,255,255,0.1);
-            color: var(--text-light);
+            background: #f5f5f5;
+            color: #666;
         }
 
         .btn-group {
@@ -728,11 +737,11 @@
 
         /* History */
         .history-item {
-            background: var(--bg-card);
-            border-radius: 12px;
+            background: white;
+            border-radius: 16px;
             padding: 16px;
             margin-bottom: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         .history-date {
@@ -741,6 +750,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: #444;
         }
 
         .history-coins {
@@ -750,13 +760,13 @@
         }
 
         .history-coins.positive {
-            background: rgba(74, 222, 128, 0.2);
-            color: var(--success);
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+            color: #2d7a3a;
         }
 
         .history-coins.negative {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
+            background: #ffe0e0;
+            color: #d32f2f;
         }
 
         .history-quests {
@@ -770,13 +780,14 @@
             border-radius: 16px;
             padding: 16px;
             margin-bottom: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         .settings-title {
             font-weight: 700;
             margin-bottom: 16px;
             font-size: 14px;
-            color: var(--text-muted);
+            color: #888;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -786,7 +797,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid #f0f0f0;
         }
 
         .settings-item:last-child {
@@ -795,20 +806,21 @@
 
         .settings-item-label {
             font-weight: 600;
+            color: #555;
         }
 
         .toggle {
             position: relative;
             width: 52px;
             height: 28px;
-            background: rgba(255,255,255,0.1);
+            background: #e0e0e0;
             border-radius: 14px;
             cursor: pointer;
             transition: background 0.3s;
         }
 
         .toggle.active {
-            background: var(--primary);
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
         }
 
         .toggle::after {
@@ -821,6 +833,7 @@
             background: white;
             border-radius: 50%;
             transition: transform 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
         .toggle.active::after {
@@ -837,8 +850,8 @@
         .user-avatar {
             width: 48px;
             height: 48px;
-            border-radius: 12px;
-            background: var(--primary);
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -848,17 +861,18 @@
         .user-avatar img {
             width: 100%;
             height: 100%;
-            border-radius: 12px;
+            border-radius: 50%;
             object-fit: cover;
         }
 
         .user-name {
             font-weight: 700;
+            color: #444;
         }
 
         .user-email {
             font-size: 13px;
-            color: var(--text-muted);
+            color: #888;
         }
 
         /* Celebration Animation */
@@ -1233,6 +1247,117 @@
             color: var(--text-muted);
             margin-bottom: 16px;
         }
+
+        /* Task Type Selector */
+        .task-type-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .task-type-option {
+            cursor: pointer;
+        }
+
+        .task-type-option input {
+            display: none;
+        }
+
+        .task-type-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .task-type-option input:checked + .task-type-label {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--primary);
+        }
+
+        .task-type-icon {
+            font-size: 24px;
+        }
+
+        /* Assigned Task Badge */
+        .assigned-badge {
+            background: rgba(167, 139, 250, 0.2);
+            color: #a78bfa;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .special-badge {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.3) 100%);
+            color: #fbbf24;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .quest-item.special {
+            border-left: 3px solid #fbbf24;
+            background: linear-gradient(90deg, rgba(251, 191, 36, 0.05) 0%, transparent 50%);
+        }
+
+        .quest-item.assigned {
+            border-left: 3px solid #a78bfa;
+        }
+
+        .bonus-display {
+            color: #fbbf24;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .deadline-display {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .deadline-display.urgent {
+            color: var(--danger);
+        }
+
+        /* Assign Button in Verify Screen */
+        .btn-assign {
+            background: rgba(167, 139, 250, 0.2);
+            color: #a78bfa;
+        }
+
+        .btn-assign:hover {
+            background: #a78bfa;
+            color: #000;
+        }
+
+        /* Special Request Section */
+        .special-section {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .special-section-title {
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            color: #fbbf24;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
     </style>
 </head>
 <body>
@@ -1361,6 +1486,77 @@
             </div>
             <p class="form-hint" data-i18n="verifierDesc">Pengesah akan sahkan quest anda sebelum dapat coins</p>
             <button class="btn btn-primary" onclick="addVerifier()" data-i18n="save">Simpan</button>
+        </div>
+    </div>
+
+    <!-- Assign Task Modal -->
+    <div class="modal-overlay" id="assignTaskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" data-i18n="assignTaskTitle">Tugaskan Task</h2>
+                <button class="modal-close" onclick="closeAssignTaskModal()">×</button>
+            </div>
+            <form id="assignTaskForm" onsubmit="saveAssignedTask(event)">
+                <input type="hidden" id="assignToUid">
+                <input type="hidden" id="assignTaskId">
+                
+                <div class="form-group">
+                    <label class="form-label" data-i18n="taskType">Jenis Task</label>
+                    <div class="task-type-selector">
+                        <label class="task-type-option">
+                            <input type="radio" name="taskType" value="normal" checked onchange="toggleTaskType()">
+                            <span class="task-type-label">
+                                <span class="task-type-icon">📋</span>
+                                <span data-i18n="normalTask">Task Biasa (Berulang)</span>
+                            </span>
+                        </label>
+                        <label class="task-type-option">
+                            <input type="radio" name="taskType" value="special" onchange="toggleTaskType()">
+                            <span class="task-type-label">
+                                <span class="task-type-icon">⭐</span>
+                                <span data-i18n="specialRequest">Special Request (Sekali)</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" data-i18n="questTitle">Tajuk Task</label>
+                    <input type="text" class="form-input" id="assignTaskTitle" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" data-i18n="category">Kategori</label>
+                    <select class="form-select" id="assignTaskCategory">
+                        <option value="home">🏠 Rumah</option>
+                        <option value="work">💼 Kerja</option>
+                        <option value="health">💪 Kesihatan</option>
+                        <option value="finance">💰 Kewangan</option>
+                        <option value="learning">📚 Pembelajaran</option>
+                        <option value="personal">🎯 Peribadi</option>
+                    </select>
+                </div>
+                
+                <!-- For Normal Task - Days selector -->
+                <div class="form-group" id="assignDaysGroup">
+                    <label class="form-label" data-i18n="repeatDays">Ulang pada Hari</label>
+                    <div class="days-selector" id="assignDaysSelector"></div>
+                </div>
+                
+                <!-- For Special Request - Bonus & Deadline -->
+                <div id="specialRequestFields" class="hidden">
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="bonusCoins">Bonus Coins 🪙</label>
+                        <input type="number" class="form-input" id="assignBonusCoins" min="1" max="100" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="deadline">Tarikh Akhir</label>
+                        <input type="date" class="form-input" id="assignDeadline">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" data-i18n="save">Simpan</button>
+            </form>
         </div>
     </div>
 
@@ -1561,7 +1757,19 @@
                 waitingVerification: 'Menunggu pengesahan dari',
                 questsToVerify: 'Quest untuk Disahkan',
                 verifiedSuccess: 'Quest telah disahkan!',
-                rejectedQuest: 'Quest telah ditolak'
+                rejectedQuest: 'Quest telah ditolak',
+                assignTask: 'Tugaskan',
+                assignTaskTitle: 'Tugaskan Task',
+                taskType: 'Jenis Task',
+                normalTask: 'Task Biasa (Berulang)',
+                specialRequest: 'Special Request (Sekali)',
+                bonusCoins: 'Bonus Coins',
+                deadline: 'Tarikh Akhir',
+                assignedBy: 'Ditugaskan oleh',
+                assignedTasks: 'Task Ditugaskan',
+                specialRequests: 'Special Requests',
+                noAssignedTasks: 'Tiada task ditugaskan',
+                bonus: 'Bonus'
             },
             en: {
                 loginSubtitle: 'Gamify your daily tasks',
@@ -1629,7 +1837,19 @@
                 waitingVerification: 'Waiting verification from',
                 questsToVerify: 'Quests to Verify',
                 verifiedSuccess: 'Quest verified!',
-                rejectedQuest: 'Quest rejected'
+                rejectedQuest: 'Quest rejected',
+                assignTask: 'Assign',
+                assignTaskTitle: 'Assign Task',
+                taskType: 'Task Type',
+                normalTask: 'Normal Task (Recurring)',
+                specialRequest: 'Special Request (One-time)',
+                bonusCoins: 'Bonus Coins',
+                deadline: 'Deadline',
+                assignedBy: 'Assigned by',
+                assignedTasks: 'Assigned Tasks',
+                specialRequests: 'Special Requests',
+                noAssignedTasks: 'No assigned tasks',
+                bonus: 'Bonus'
             }
         };
 
@@ -1991,6 +2211,202 @@
             isVerifierMode = !isVerifierMode;
             switchScreen(isVerifierMode ? 'verify' : 'today');
         }
+        
+        // Assign Task Functions
+        function openAssignTaskModal(userUid) {
+            document.getElementById('assignToUid').value = userUid;
+            document.getElementById('assignTaskId').value = '';
+            document.getElementById('assignTaskTitle').value = '';
+            document.getElementById('assignTaskCategory').value = 'home';
+            document.querySelector('input[name="taskType"][value="normal"]').checked = true;
+            document.getElementById('assignBonusCoins').value = '10';
+            document.getElementById('assignDeadline').value = '';
+            
+            // Reset days
+            document.querySelectorAll('#assignDaysSelector .day-checkbox').forEach(cb => cb.checked = false);
+            
+            // Set default deadline to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('assignDeadline').value = tomorrow.toISOString().split('T')[0];
+            
+            toggleTaskType();
+            renderAssignDaysSelector();
+            document.getElementById('assignTaskModal').classList.add('active');
+        }
+        
+        function closeAssignTaskModal() {
+            document.getElementById('assignTaskModal').classList.remove('active');
+        }
+        
+        function toggleTaskType() {
+            const isSpecial = document.querySelector('input[name="taskType"]:checked').value === 'special';
+            document.getElementById('assignDaysGroup').classList.toggle('hidden', isSpecial);
+            document.getElementById('specialRequestFields').classList.toggle('hidden', !isSpecial);
+        }
+        
+        function renderAssignDaysSelector() {
+            const t = translations[currentLang];
+            const container = document.getElementById('assignDaysSelector');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 7; i++) {
+                const html = `
+                    <input type="checkbox" class="day-checkbox" id="assignDay${i}" value="${i}">
+                    <label class="day-label" for="assignDay${i}">${t.days[i-1]}</label>
+                `;
+                container.innerHTML += html;
+            }
+        }
+        
+        async function saveAssignedTask(event) {
+            event.preventDefault();
+            
+            const userUid = document.getElementById('assignToUid').value;
+            const title = document.getElementById('assignTaskTitle').value.trim();
+            const category = document.getElementById('assignTaskCategory').value;
+            const taskType = document.querySelector('input[name="taskType"]:checked').value;
+            
+            if (!title) return;
+            
+            if (taskType === 'normal') {
+                // Recurring task - save as template
+                const selectedDays = [];
+                document.querySelectorAll('#assignDaysSelector .day-checkbox:checked').forEach(cb => {
+                    selectedDays.push(parseInt(cb.value));
+                });
+                
+                if (selectedDays.length === 0) {
+                    alert(currentLang === 'ms' ? 'Sila pilih sekurang-kurangnya satu hari' : 'Please select at least one day');
+                    return;
+                }
+                
+                const taskData = {
+                    title,
+                    category,
+                    daysOfWeek: selectedDays,
+                    assignedBy: currentUser.uid,
+                    assignedByEmail: currentUser.email,
+                    isAssigned: true,
+                    createdAt: Date.now()
+                };
+                
+                await db.ref(`questTemplates/${userUid}`).push(taskData);
+                
+                // Generate for today if applicable
+                const today = new Date();
+                const dayOfWeek = today.getDay();
+                const adjustedDay = dayOfWeek === 0 ? 7 : dayOfWeek;
+                
+                if (selectedDays.includes(adjustedDay)) {
+                    const todayStr = getDateString(today);
+                    const newTaskRef = await db.ref(`questTemplates/${userUid}`).orderByChild('createdAt').limitToLast(1).once('value');
+                    let newTaskId;
+                    newTaskRef.forEach(child => { newTaskId = child.key; });
+                    
+                    await db.ref(`dailyQuests/${userUid}/${todayStr}/${newTaskId}`).set({
+                        templateId: newTaskId,
+                        title,
+                        category,
+                        status: 'pending',
+                        isAssigned: true,
+                        assignedBy: currentUser.uid,
+                        assignedByEmail: currentUser.email,
+                        createdAt: Date.now()
+                    });
+                }
+                
+            } else {
+                // Special request - one time
+                const bonusCoins = parseInt(document.getElementById('assignBonusCoins').value) || 10;
+                const deadline = document.getElementById('assignDeadline').value;
+                
+                if (!deadline) {
+                    alert(currentLang === 'ms' ? 'Sila pilih tarikh akhir' : 'Please select a deadline');
+                    return;
+                }
+                
+                const specialData = {
+                    title,
+                    category,
+                    bonusCoins,
+                    deadline,
+                    assignedBy: currentUser.uid,
+                    assignedByEmail: currentUser.email,
+                    isSpecial: true,
+                    status: 'pending',
+                    createdAt: Date.now()
+                };
+                
+                await db.ref(`specialRequests/${userUid}`).push(specialData);
+            }
+            
+            closeAssignTaskModal();
+            renderScreen();
+        }
+        
+        async function verifySpecialRequest(userUid, requestId) {
+            const snapshot = await db.ref(`specialRequests/${userUid}/${requestId}`).once('value');
+            const request = snapshot.val();
+            
+            if (request && request.status === 'pending_verification') {
+                // Mark as verified and award bonus coins
+                await db.ref(`specialRequests/${userUid}/${requestId}`).update({
+                    status: 'verified',
+                    verifiedAt: Date.now(),
+                    verifiedBy: currentUser.uid
+                });
+                
+                // Award bonus coins
+                const userSnapshot = await db.ref(`users/${userUid}`).once('value');
+                const userData = userSnapshot.val();
+                const newCoins = (userData.totalCoins || 0) + request.bonusCoins;
+                
+                await db.ref(`users/${userUid}/totalCoins`).set(newCoins);
+                await db.ref(`transactions/${userUid}`).push({
+                    amount: request.bonusCoins,
+                    type: 'bonus',
+                    description: `Special Request: ${request.title}`,
+                    createdAt: Date.now()
+                });
+                
+                playTickSound();
+            }
+            
+            renderScreen();
+        }
+        
+        async function rejectSpecialRequest(userUid, requestId) {
+            await db.ref(`specialRequests/${userUid}/${requestId}`).update({
+                status: 'pending',
+                completedAt: null
+            });
+            
+            renderScreen();
+        }
+        
+        async function toggleSpecialRequest(requestId) {
+            const snapshot = await db.ref(`specialRequests/${currentUser.uid}/${requestId}`).once('value');
+            const request = snapshot.val();
+            
+            if (request) {
+                let newStatus;
+                if (request.status === 'pending_verification') {
+                    newStatus = 'pending';
+                    playUntickSound();
+                } else {
+                    newStatus = 'pending_verification';
+                    playTickSound();
+                }
+                
+                await db.ref(`specialRequests/${currentUser.uid}/${requestId}`).update({
+                    status: newStatus,
+                    completedAt: newStatus === 'pending_verification' ? Date.now() : null
+                });
+                
+                renderScreen();
+            }
+        }
 
         async function updateCoins(amount, type, description) {
             userCoins += amount;
@@ -2111,7 +2527,7 @@
             }
         }
 
-        function renderTodayScreen(container) {
+        async function renderTodayScreen(container) {
             const t = translations[currentLang];
             const completedCount = todayQuests.filter(q => q.status === 'completed' || q.status === 'pending_verification' || q.status === 'verified').length;
             const totalCount = todayQuests.length;
@@ -2171,18 +2587,65 @@
                 todayQuests.forEach(quest => {
                     const statusClass = quest.status === 'pending_verification' ? 'pending-verification' : 
                                        quest.status === 'verified' ? 'verified' : quest.status;
+                    const isAssigned = quest.isAssigned || quest.assignedBy;
+                    const extraClass = isAssigned ? ' assigned' : '';
                     const statusBadge = quest.status === 'pending_verification' ? `<span class="pending-badge">⏳ ${t.pendingVerification}</span>` :
                                        quest.status === 'verified' ? `<span class="verified-badge">✓ ${t.verified}</span>` :
                                        quest.status === 'overdue' ? `<span class="overdue-badge">${t.overdue}</span>` : '';
+                    const assignedBadge = isAssigned ? `<span class="assigned-badge">📋 ${t.assignedBy}: ${quest.assignedByEmail ? quest.assignedByEmail.split('@')[0] : 'Verifier'}</span>` : '';
                     
                     html += `
-                        <div class="quest-item ${statusClass}" onclick="toggleQuestComplete('${quest.id}')">
+                        <div class="quest-item ${statusClass}${extraClass}" onclick="toggleQuestComplete('${quest.id}')">
                             <div class="quest-checkbox"></div>
                             <div class="quest-content">
                                 <div class="quest-title">${quest.title}</div>
                                 <div class="quest-meta">
                                     <span class="quest-category category-${quest.category}">${getCategoryIcon(quest.category)}</span>
+                                    ${assignedBadge}
                                     ${statusBadge}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div></div>';
+            }
+            
+            // Load and show special requests
+            const specialSnapshot = await db.ref(`specialRequests/${currentUser.uid}`).orderByChild('status').once('value');
+            const specialRequests = [];
+            specialSnapshot.forEach(child => {
+                const req = child.val();
+                if (req.status !== 'verified') {
+                    specialRequests.push({ id: child.key, ...req });
+                }
+            });
+            
+            if (specialRequests.length > 0) {
+                html += `
+                    <div class="special-section">
+                        <div class="special-section-title">⭐ ${t.specialRequests}</div>
+                        <div class="quest-list">
+                `;
+                
+                specialRequests.forEach(req => {
+                    const isCompleted = req.status === 'pending_verification';
+                    const deadlineDate = new Date(req.deadline);
+                    const today = new Date();
+                    const isUrgent = deadlineDate <= today;
+                    const deadlineStr = deadlineDate.toLocaleDateString(currentLang === 'ms' ? 'ms-MY' : 'en-US', { day: 'numeric', month: 'short' });
+                    
+                    html += `
+                        <div class="quest-item special ${isCompleted ? 'pending-verification' : ''}" onclick="toggleSpecialRequest('${req.id}')">
+                            <div class="quest-checkbox"></div>
+                            <div class="quest-content">
+                                <div class="quest-title">${req.title}</div>
+                                <div class="quest-meta">
+                                    <span class="quest-category category-${req.category}">${getCategoryIcon(req.category)}</span>
+                                    <span class="special-badge">⭐ +${req.bonusCoins} 🪙</span>
+                                    <span class="deadline-display ${isUrgent ? 'urgent' : ''}">📅 ${deadlineStr}</span>
+                                    ${isCompleted ? `<span class="pending-badge">⏳</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -2401,30 +2864,47 @@
                 const today = getDateString(new Date());
                 
                 for (const user of usersToVerify) {
+                    // Get daily quests
                     const snapshot = await db.ref(`dailyQuests/${user.uid}/${today}`).once('value');
                     const quests = [];
                     snapshot.forEach(child => {
                         quests.push({ id: child.key, ...child.val() });
                     });
                     
-                    const pendingQuests = quests.filter(q => q.status === 'pending_verification');
+                    // Get special requests
+                    const specialSnapshot = await db.ref(`specialRequests/${user.uid}`).once('value');
+                    const specialRequests = [];
+                    specialSnapshot.forEach(child => {
+                        const req = child.val();
+                        if (req.status === 'pending_verification') {
+                            specialRequests.push({ id: child.key, ...req });
+                        }
+                    });
                     
-                    if (pendingQuests.length > 0) {
-                        html += `
-                            <div class="verify-user-card">
-                                <div class="verify-user-header">
-                                    <div class="verify-user-info">
-                                        <span class="verify-user-icon">👤</span>
-                                        <div>
-                                            <div class="verify-user-name">${user.email}</div>
-                                            <div class="verify-user-count">${pendingQuests.length} ${t.questsToVerify.toLowerCase()}</div>
-                                        </div>
+                    const pendingQuests = quests.filter(q => q.status === 'pending_verification');
+                    const hasPendingItems = pendingQuests.length > 0 || specialRequests.length > 0;
+                    
+                    html += `
+                        <div class="verify-user-card">
+                            <div class="verify-user-header">
+                                <div class="verify-user-info">
+                                    <span class="verify-user-icon">👤</span>
+                                    <div>
+                                        <div class="verify-user-name">${user.email}</div>
+                                        <div class="verify-user-count">${pendingQuests.length + specialRequests.length} ${t.questsToVerify.toLowerCase()}</div>
                                     </div>
-                                    <button class="btn btn-success btn-sm" onclick="verifyAllQuests('${user.uid}', '${today}')">${t.verifyAll}</button>
                                 </div>
-                                <div class="verify-quest-list">
-                        `;
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn btn-assign btn-sm" onclick="openAssignTaskModal('${user.uid}')">📋 ${t.assignTask}</button>
+                                    ${pendingQuests.length > 0 ? `<button class="btn btn-success btn-sm" onclick="verifyAllQuests('${user.uid}', '${today}')">${t.verifyAll}</button>` : ''}
+                                </div>
+                            </div>
+                    `;
+                    
+                    if (hasPendingItems) {
+                        html += '<div class="verify-quest-list">';
                         
+                        // Daily quests
                         pendingQuests.forEach(quest => {
                             html += `
                                 <div class="verify-quest-item">
@@ -2440,30 +2920,29 @@
                             `;
                         });
                         
-                        html += `
+                        // Special requests
+                        specialRequests.forEach(req => {
+                            html += `
+                                <div class="verify-quest-item special">
+                                    <div class="verify-quest-info">
+                                        <span class="quest-category category-${req.category}">${getCategoryIcon(req.category)}</span>
+                                        <span class="verify-quest-title">${req.title}</span>
+                                        <span class="special-badge">⭐ +${req.bonusCoins} 🪙</span>
+                                    </div>
+                                    <div class="verify-quest-actions">
+                                        <button class="btn-icon btn-verify" onclick="verifySpecialRequest('${user.uid}', '${req.id}')">✓</button>
+                                        <button class="btn-icon btn-reject" onclick="rejectSpecialRequest('${user.uid}', '${req.id}')">✗</button>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        });
+                        
+                        html += '</div>';
+                    } else {
+                        html += `<p style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">✅ ${currentLang === 'ms' ? 'Semua disahkan' : 'All verified'}</p>`;
                     }
-                }
-                
-                // Check if no pending quests
-                const hasPending = usersToVerify.some(async u => {
-                    const snap = await db.ref(`dailyQuests/${u.uid}/${today}`).once('value');
-                    let pending = false;
-                    snap.forEach(child => {
-                        if (child.val().status === 'pending_verification') pending = true;
-                    });
-                    return pending;
-                });
-                
-                if (html.indexOf('verify-user-card') === -1) {
-                    html += `
-                        <div class="empty-state">
-                            <div class="empty-icon">✅</div>
-                            <div class="empty-title">${t.noUsersToVerify}</div>
-                        </div>
-                    `;
+                    
+                    html += '</div>';
                 }
             }
             
