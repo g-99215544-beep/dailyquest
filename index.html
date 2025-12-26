@@ -571,8 +571,8 @@
 
         // Login with ID Code + PIN
         async function loginWithIdCode() {
-            const idCode = document.getElementById('loginIdCode').value.toUpperCase();
-            const pin = document.getElementById('loginPin').value;
+            const idCode = document.getElementById('loginIdCode').value.toUpperCase().trim();
+            const pin = document.getElementById('loginPin').value.trim();
             const errorEl = document.getElementById('loginError');
             
             if (!idCode || !pin) {
@@ -581,10 +581,25 @@
                 return;
             }
             
-            // Find user by ID Code
-            const snap = await db.ref('users').orderByChild('idCode').equalTo(idCode).once('value');
-            if (!snap.exists()) {
-                errorEl.textContent = 'ID Code tidak dijumpai';
+            console.log('Searching for ID Code:', idCode);
+            
+            try {
+                // Find user by ID Code
+                const snap = await db.ref('users').orderByChild('idCode').equalTo(idCode).once('value');
+                console.log('Query result:', snap.val());
+                
+                if (!snap.exists()) {
+                    // Debug: list all users to see what ID codes exist
+                    const allUsers = await db.ref('users').once('value');
+                    console.log('All users:', allUsers.val());
+                    
+                    errorEl.textContent = 'ID Code tidak dijumpai';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+            } catch (err) {
+                console.error('Firebase error:', err);
+                errorEl.textContent = 'Error: ' + err.message;
                 errorEl.classList.remove('hidden');
                 return;
             }
