@@ -651,7 +651,17 @@
             verifierUid = data.verifierUid || null;
             currentUser.displayName = data.displayName || 'User';
             currentUser.email = data.email || '';
-            currentUser.idCode = data.idCode || generateIdCode(currentUser.odUid);
+            
+            // Auto-generate and save idCode if not exists
+            if (!data.idCode) {
+                const newIdCode = generateIdCode(currentUser.odUid);
+                await db.ref(`users/${currentUser.odUid}/idCode`).set(newIdCode);
+                currentUser.idCode = newIdCode;
+                console.log('Generated new ID Code:', newIdCode);
+            } else {
+                currentUser.idCode = data.idCode;
+            }
+            
             updateLevel();
         }
 
@@ -1492,7 +1502,7 @@
                     <div class="settings-title">🆔 ID Code Anda</div>
                     <div class="id-code-box">
                         <div class="id-code-label">Kongsi kod ini untuk link akaun di device lain</div>
-                        <div class="id-code-value">${currentUser.idCode}</div>
+                        <div class="id-code-value">${data.idCode || 'N/A'}</div>
                     </div>
                 </div>
                 
