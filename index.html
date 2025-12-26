@@ -583,16 +583,13 @@
             
             console.log('Searching for ID Code:', idCode);
             
+            let snap;
             try {
                 // Find user by ID Code
-                const snap = await db.ref('users').orderByChild('idCode').equalTo(idCode).once('value');
+                snap = await db.ref('users').orderByChild('idCode').equalTo(idCode).once('value');
                 console.log('Query result:', snap.val());
                 
                 if (!snap.exists()) {
-                    // Debug: list all users to see what ID codes exist
-                    const allUsers = await db.ref('users').once('value');
-                    console.log('All users:', allUsers.val());
-                    
                     errorEl.textContent = 'ID Code tidak dijumpai';
                     errorEl.classList.remove('hidden');
                     return;
