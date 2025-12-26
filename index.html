@@ -417,6 +417,36 @@
             <button class="btn btn-primary" onclick="addVerifierByCode()">Tambah</button>
         </div>
     </div>
+    <div class="modal-overlay" id="assignModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Assign Quest</h2>
+                <button class="modal-close" onclick="closeAssignModal()">×</button>
+            </div>
+            <p style="margin-bottom:16px;color:var(--text-muted)">Assign quest kepada: <strong id="assignUserName"></strong></p>
+            <input type="hidden" id="assignUserUid">
+            <div class="quest-type-toggle">
+                <button type="button" class="quest-type-btn active" id="assignDailyBtn" onclick="setAssignType('daily')"><span>📅</span><small>Harian</small></button>
+                <button type="button" class="quest-type-btn persistent" id="assignPersistentBtn" onclick="setAssignType('persistent')"><span>📌</span><small>Berterusan</small></button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tajuk Quest</label>
+                <input type="text" class="form-input" id="assignQuestTitle" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kategori</label>
+                <select class="form-select" id="assignQuestCategory">
+                    <option value="home">🏠 Rumah</option>
+                    <option value="work">💼 Kerja</option>
+                    <option value="health">💪 Kesihatan</option>
+                    <option value="finance">💰 Kewangan</option>
+                    <option value="learning">📚 Pembelajaran</option>
+                    <option value="personal">🎯 Peribadi</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="submitAssignQuest()">Assign Quest</button>
+        </div>
+    </div>
     <div class="celebration" id="celebration"></div>
     <script>
         const firebaseConfig = {
@@ -736,6 +766,72 @@
         }
         function toggleVerifierMode() { isVerifierMode = !isVerifierMode; renderScreen(); }
 
+        async function cancelAssignedQuest(userUid, questId, type, dateStr = null) {
+            const questType = type === 'persistent' ? 'quest berterusan' : 'quest harian';
+            if (!confirm(`Tarik balik ${questType} ini?`)) return;
+            
+            if (type === 'persistent') {
+                await db.ref(`persistentQuests/${userUid}/${questId}`).remove();
+            } else {
+                await db.ref(`dailyQuests/${userUid}/${dateStr}/${questId}`).remove();
+            }
+            
+            await loadUsersToVerify();
+            renderScreen();
+        }
+
+        async function removeSubordinate(userUid, userName) {
+            if (!confirm(`Buang ${userName} sebagai anak buah anda?\n\nDia tidak lagi perlu pengesahan dari anda untuk quest-questnya.`)) return;
+            
+            // Remove verifier from user's data
+            await db.ref(`users/${userUid}`).update({
+                verifierCode: null,
+                verifierUid: null
+            });
+            
+            await loadUsersToVerify();
+            renderScreen();
+        }
+
+        let assignType = 'daily';
+        function openAssignQuestModal(userUid, userName) {
+            document.getElementById('assignUserUid').value = userUid;
+            document.getElementById('assignUserName').textContent = userName;
+            document.getElementById('assignQuestTitle').value = '';
+            document.getElementById('assignQuestCategory').value = 'home';
+            setAssignType('daily');
+            document.getElementById('assignModal').classList.add('active');
+        }
+        function closeAssignModal() { document.getElementById('assignModal').classList.remove('active'); }
+        function setAssignType(type) {
+            assignType = type;
+            document.getElementById('assignDailyBtn').classList.toggle('active', type === 'daily');
+            document.getElementById('assignPersistentBtn').classList.toggle('active', type === 'persistent');
+        }
+        async function submitAssignQuest() {
+            const userUid = document.getElementById('assignUserUid').value;
+            const title = document.getElementById('assignQuestTitle').value.trim();
+            const category = document.getElementById('assignQuestCategory').value;
+            if (!title) { alert('Sila masukkan tajuk quest'); return; }
+            
+            if (assignType === 'persistent') {
+                await db.ref(`persistentQuests/${userUid}`).push({
+                    title, category, isPersistent: true, status: 'pending',
+                    assignedBy: currentUser.uid, createdAt: Date.now()
+                });
+            } else {
+                const today = getDateString(new Date());
+                await db.ref(`dailyQuests/${userUid}/${today}`).push({
+                    title, category, status: 'pending',
+                    assignedBy: currentUser.uid, createdAt: Date.now()
+                });
+            }
+            
+            closeAssignModal();
+            await loadUsersToVerify();
+            renderScreen();
+        }
+
         function openAddQuestModal() {
             document.getElementById('questModalTitle').textContent = 'Tambah Quest';
             document.getElementById('questId').value = '';
@@ -908,31 +1004,58 @@
 
         async function renderVerifierContent() {
             await loadUsersToVerify();
-            if (usersToVerify.length === 0) return `<div class="empty-state"><div class="empty-icon">👁️</div><div class="empty-title">Tiada pengguna untuk disahkan</div></div>`;
+            if (usersToVerify.length === 0) return `<div class="empty-state"><div class="empty-icon">👁️</div><div class="empty-title">Tiada anak buah untuk disahkan</div></div>`;
             const today = getDateString(new Date());
             let html = '';
             for (const user of usersToVerify) {
                 const qSnap = await db.ref(`dailyQuests/${user.odUid}/${today}`).once('value');
                 const quests = []; qSnap.forEach(c => quests.push({ id: c.key, ...c.val() }));
                 const pSnap = await db.ref(`persistentQuests/${user.odUid}`).once('value');
-                const pQuests = []; pSnap.forEach(c => { if (c.val().status === 'pending_verification') pQuests.push({ id: c.key, ...c.val() }); });
+                const allPQuests = []; pSnap.forEach(c => allPQuests.push({ id: c.key, ...c.val() }));
+                const pQuests = allPQuests.filter(q => q.status === 'pending_verification');
                 const pending = quests.filter(q => q.status === 'pending_verification');
-                html += `<div class="verify-user-card"><div class="verify-user-header"><div class="verify-user-info"><span style="font-size:24px">👤</span><div><div class="verify-user-name">${user.displayName || user.email}</div><div class="verify-user-count">${pending.length + pQuests.length} quest untuk disahkan</div></div></div>
-                    ${pending.length > 0 ? `<button class="btn btn-primary btn-sm" onclick="verifyAllQuests('${user.odUid}','${today}')">Sahkan Semua</button>` : ''}</div>`;
-                if (pQuests.length > 0) {
+                const totalPending = pending.length + pQuests.length;
+                html += `<div class="verify-user-card">
+                    <div class="verify-user-header">
+                        <div class="verify-user-info"><span style="font-size:24px">👤</span><div><div class="verify-user-name">${user.displayName || user.email}</div><div class="verify-user-count">${totalPending} menunggu • ${quests.length + allPQuests.length} jumlah quest</div></div></div>
+                        <button class="btn-icon" style="background:rgba(231,76,60,0.1);color:var(--danger)" onclick="removeSubordinate('${user.odUid}','${user.displayName || user.email}')" title="Buang Anak Buah">👋</button>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-bottom:12px">
+                        <button class="btn btn-secondary btn-sm" onclick="openAssignQuestModal('${user.odUid}','${user.displayName || user.email}')" style="flex:1">➕ Assign Quest</button>
+                        ${totalPending > 0 ? `<button class="btn btn-primary btn-sm" onclick="verifyAllQuests('${user.odUid}','${today}')" style="flex:1">✓ Sahkan Semua</button>` : ''}
+                    </div>`;
+                
+                // Persistent Quests - show all (not just pending)
+                if (allPQuests.length > 0) {
                     html += '<div style="margin-bottom:8px;font-size:12px;color:var(--persistent);font-weight:600">📌 Berterusan</div>';
-                    pQuests.forEach(q => {
-                        html += `<div class="verify-quest-item"><div class="verify-quest-info"><span>${getCategoryIcon(q.category)}</span><span>${q.title}</span></div>
-                            <div class="verify-quest-actions"><button class="btn-icon btn-verify" onclick="verifyQuest('${user.odUid}','${today}','${q.id}',true)">✓</button><button class="btn-icon btn-reject" onclick="rejectQuest('${user.odUid}','${today}','${q.id}',true)">✗</button></div></div>`;
+                    allPQuests.forEach(q => {
+                        const isPending = q.status === 'pending_verification';
+                        const isVerified = q.status === 'verified';
+                        const statusBadge = isPending ? '<span class="pending-badge" style="margin-left:8px">⏳</span>' : isVerified ? '<span class="verified-badge" style="margin-left:8px">✓✓</span>' : '';
+                        html += `<div class="verify-quest-item" style="${isVerified ? 'opacity:0.6' : ''}"><div class="verify-quest-info"><span>${getCategoryIcon(q.category)}</span><span>${q.title}</span>${statusBadge}</div>
+                            <div class="verify-quest-actions">
+                                ${isPending ? `<button class="btn-icon btn-verify" onclick="verifyQuest('${user.odUid}','${today}','${q.id}',true)">✓</button><button class="btn-icon btn-reject" onclick="rejectQuest('${user.odUid}','${today}','${q.id}',true)">✗</button>` : ''}
+                                <button class="btn-icon" style="background:rgba(231,76,60,0.1);color:var(--danger)" onclick="cancelAssignedQuest('${user.odUid}','${q.id}','persistent')" title="Tarik Balik">🗑️</button>
+                            </div></div>`;
                     });
                 }
-                if (pending.length > 0) {
-                    html += '<div style="margin-bottom:8px;font-size:12px;color:var(--text-muted);font-weight:600">📅 Harian</div>';
-                    pending.forEach(q => {
-                        html += `<div class="verify-quest-item"><div class="verify-quest-info"><span>${getCategoryIcon(q.category)}</span><span>${q.title}</span></div>
-                            <div class="verify-quest-actions"><button class="btn-icon btn-verify" onclick="verifyQuest('${user.odUid}','${today}','${q.id}')">✓</button><button class="btn-icon btn-reject" onclick="rejectQuest('${user.odUid}','${today}','${q.id}')">✗</button></div></div>`;
+                
+                // Daily Quests - show all for today
+                if (quests.length > 0) {
+                    html += '<div style="margin:12px 0 8px;font-size:12px;color:var(--text-muted);font-weight:600">📅 Harian</div>';
+                    quests.forEach(q => {
+                        const isPending = q.status === 'pending_verification';
+                        const isVerified = q.status === 'verified';
+                        const isCompleted = q.status === 'completed';
+                        const statusBadge = isPending ? '<span class="pending-badge" style="margin-left:8px">⏳</span>' : isVerified ? '<span class="verified-badge" style="margin-left:8px">✓✓</span>' : isCompleted ? '<span class="verified-badge" style="margin-left:8px">✓</span>' : '';
+                        html += `<div class="verify-quest-item" style="${isVerified ? 'opacity:0.6' : ''}"><div class="verify-quest-info"><span>${getCategoryIcon(q.category)}</span><span>${q.title}</span>${statusBadge}</div>
+                            <div class="verify-quest-actions">
+                                ${isPending ? `<button class="btn-icon btn-verify" onclick="verifyQuest('${user.odUid}','${today}','${q.id}')">✓</button><button class="btn-icon btn-reject" onclick="rejectQuest('${user.odUid}','${today}','${q.id}')">✗</button>` : ''}
+                                <button class="btn-icon" style="background:rgba(231,76,60,0.1);color:var(--danger)" onclick="cancelAssignedQuest('${user.odUid}','${q.id}','daily','${today}')" title="Tarik Balik">🗑️</button>
+                            </div></div>`;
                     });
-                } else if (pQuests.length === 0) html += `<p style="color:var(--text-muted);font-size:13px;padding:8px 0">✅ Semua quest telah disahkan</p>`;
+                }
+                if (quests.length === 0 && allPQuests.length === 0) html += `<p style="color:var(--text-muted);font-size:13px;padding:8px 0">Tiada quest</p>`;
                 html += '</div>';
             }
             return html;
