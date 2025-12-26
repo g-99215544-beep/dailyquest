@@ -575,6 +575,7 @@
             verifierUid = data.verifierUid || null;
             currentUser.displayName = data.displayName || 'User';
             currentUser.email = data.email || '';
+            currentUser.idCode = data.idCode || generateIdCode(currentUser.odUid);
             updateLevel();
         }
 
@@ -1119,11 +1120,45 @@
             const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
             let html = `<div class="section-header"><h3 class="section-title">${months[today.getMonth()]} ${today.getFullYear()}</h3></div>`;
             
+            // Load completed persistent quests
+            const pSnap = await db.ref(`persistentQuests/${currentUser.odUid}`).once('value');
+            const completedPersistent = [];
+            pSnap.forEach(c => {
+                const q = c.val();
+                if (q.status === 'completed' || q.status === 'verified') {
+                    completedPersistent.push({ id: c.key, ...q });
+                }
+            });
+            
+            // Show completed persistent quests section if any
+            if (completedPersistent.length > 0) {
+                html += `<div class="history-item" style="border-left:4px solid var(--persistent)">
+                    <div class="history-header" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                        <div class="history-left">
+                            <span class="history-icon">📌</span>
+                            <div><div class="history-date">Quest Berterusan Selesai</div>
+                            <div class="history-summary success">${completedPersistent.length} quest</div></div>
+                        </div>
+                        <span class="exp-reward">+${completedPersistent.length * 50} EXP</span>
+                    </div>
+                    <div class="history-details hidden">
+                        ${completedPersistent.map(q => {
+                            const completedDate = q.completedAt ? new Date(q.completedAt) : null;
+                            const dateStr = completedDate ? `${completedDate.getDate()} ${months[completedDate.getMonth()]}` : '';
+                            return `<div class="history-quest"><span class="history-check done">✓</span><span>${getCatIcon(q.category)}</span><span>${q.title}</span><span style="margin-left:auto;font-size:11px;color:var(--text-muted)">${dateStr}</span></div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            }
+            
+            // Daily quests by date
+            let hasDaily = false;
             for (let d = new Date(today); d >= firstDay; d.setDate(d.getDate() - 1)) {
                 const dateStr = getDateStr(d);
                 const snap = await db.ref(`dailyQuests/${currentUser.odUid}/${dateStr}`).once('value');
                 if (!snap.exists()) continue;
                 
+                hasDaily = true;
                 const quests = []; snap.forEach(c => quests.push(c.val()));
                 const done = quests.filter(q => ['completed','pending_verification','verified'].includes(q.status)).length;
                 const total = quests.length;
@@ -1147,7 +1182,11 @@
                 </div>`;
             }
             
-            return html || `<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-title">Tiada sejarah</div></div>`;
+            if (completedPersistent.length === 0 && !hasDaily) {
+                return `<div class="section-header"><h3 class="section-title">${months[today.getMonth()]} ${today.getFullYear()}</h3></div><div class="empty-state"><div class="empty-icon">📜</div><div class="empty-title">Tiada sejarah</div></div>`;
+            }
+            
+            return html;
         }
 
         async function renderSettings() {
