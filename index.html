@@ -290,7 +290,7 @@
         
         <nav class="bottom-nav">
             <button class="nav-item active" data-screen="today" onclick="switchScreen('today')"><span class="nav-icon">⚔️</span><span>Quest</span></button>
-            <button class="nav-item" data-screen="rewards" onclick="switchScreen('rewards')"><span class="nav-icon">🎁</span><span>Rewards</span></button>
+            <button class="nav-item" data-screen="manage" onclick="switchScreen('manage')"><span class="nav-icon">📋</span><span>Urus</span></button>
             <button class="nav-item" data-screen="history" onclick="switchScreen('history')"><span class="nav-icon">📜</span><span>Sejarah</span></button>
             <button class="nav-item" data-screen="settings" onclick="switchScreen('settings')"><span class="nav-icon">⚙️</span><span>Lagi</span></button>
         </nav>
@@ -891,24 +891,20 @@
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         
         function openAddModal() {
-            if (currentScreen === 'rewards') {
-                openRewardModal();
-            } else {
-                editingId = null;
-                document.getElementById('modalTitle').textContent = 'Tambah Quest';
-                document.getElementById('questTitle').value = '';
-                document.getElementById('questCategory').value = 'home';
-                document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
-                
-                // Auto-check hari ini
-                const dow = new Date().getDay();
-                const adjToday = dow === 0 ? 7 : dow;
-                const todayCheckbox = document.getElementById('day' + adjToday);
-                if (todayCheckbox) todayCheckbox.checked = true;
-                
-                setQuestType('daily');
-                openModal('questModal');
-            }
+            editingId = null;
+            document.getElementById('modalTitle').textContent = 'Tambah Quest';
+            document.getElementById('questTitle').value = '';
+            document.getElementById('questCategory').value = 'home';
+            document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+            
+            // Auto-check hari ini
+            const dow = new Date().getDay();
+            const adjToday = dow === 0 ? 7 : dow;
+            const todayCheckbox = document.getElementById('day' + adjToday);
+            if (todayCheckbox) todayCheckbox.checked = true;
+            
+            setQuestType('daily');
+            openModal('questModal');
         }
 
         function setQuestType(type) {
@@ -1171,7 +1167,7 @@
             const el = document.getElementById('mainContent');
             switch(currentScreen) {
                 case 'today': el.innerHTML = await renderToday(); break;
-                case 'rewards': el.innerHTML = await renderRewards(); break;
+                case 'manage': el.innerHTML = renderManage(); break;
                 case 'history': el.innerHTML = await renderHistory(); break;
                 case 'settings': el.innerHTML = await renderSettings(); break;
             }
@@ -1254,45 +1250,53 @@
             return html;
         }
 
-        async function renderRewards() {
-            const levelData = calculateLevel(userExp);
-            let html = `<div class="rewards-balance">
-                <div class="balance-label">EXP Tersedia</div>
-                <div class="balance-value">${userExp}</div>
-                <div class="balance-sub">Level ${userLevel} • ${levelData.needed - levelData.current} EXP ke Level ${userLevel + 1}</div>
-            </div>`;
+        function renderManage() {
+            let html = '';
             
-            // Pending rewards
-            if (pendingRewards.length > 0) {
-                html += `<div class="pending-rewards"><div class="pending-title">⏳ Menunggu Pengesahan</div>`;
-                pendingRewards.forEach(r => {
-                    html += `<div class="pending-item">
-                        <div class="pending-info"><span style="font-size:24px">${r.icon}</span><span>${r.title}</span></div>
-                        <span style="color:var(--purple);font-weight:600">-${r.cost} EXP</span>
+            // Quest Harian (Templates)
+            html += `<div class="section-header"><h3 class="section-title">📅 Quest Harian</h3></div>`;
+            
+            if (questTemplates.length === 0) {
+                html += `<div class="empty-state" style="padding:20px"><div class="empty-icon">📋</div><div class="empty-title">Tiada quest harian</div><p style="color:var(--text-muted);margin-top:8px">Tekan + untuk tambah quest</p></div>`;
+            } else {
+                html += '<div class="quest-list">';
+                questTemplates.forEach(t => {
+                    const daysText = t.daysOfWeek ? t.daysOfWeek.map(d => days[d-1]).join(', ') : '-';
+                    html += `<div class="quest-item" style="cursor:default">
+                        <div class="quest-content">
+                            <div class="quest-title">${t.title}</div>
+                            <div class="quest-meta">
+                                <span class="quest-category category-${t.category}">${getCatIcon(t.category)}</span>
+                                <span style="font-size:11px;color:var(--text-muted)">${daysText}</span>
+                            </div>
+                        </div>
+                        <button class="btn-icon" style="background:#f0f0f0" onclick="editTemplate('${t.id}')">✏️</button>
+                        <button class="btn-icon" style="background:#fff0f0;color:var(--danger);margin-left:4px" onclick="openDelete('${t.id}','template')">🗑️</button>
                     </div>`;
                 });
                 html += '</div>';
             }
             
-            // Available rewards
-            html += `<div class="section-header"><h3 class="section-title">🎁 Rewards</h3></div>`;
+            // Quest Berterusan
+            html += `<div class="section-header" style="margin-top:24px"><h3 class="section-title">📌 Quest Berterusan</h3></div>`;
             
-            if (rewards.length === 0) {
-                html += `<div class="empty-state" style="padding:20px"><div class="empty-icon">🎁</div><div class="empty-title">Tiada reward</div><p style="color:var(--text-muted);margin-top:8px">Tekan + untuk tambah reward</p></div>`;
+            if (persistentQuests.length === 0) {
+                html += `<div class="empty-state" style="padding:20px"><div class="empty-icon">📌</div><div class="empty-title">Tiada quest berterusan</div></div>`;
             } else {
-                rewards.forEach(r => {
-                    const canAfford = userExp >= r.cost;
-                    html += `<div class="reward-item">
-                        <span class="reward-icon">${r.icon}</span>
-                        <div class="reward-content">
-                            <div class="reward-title">${r.title}</div>
-                            <div class="reward-cost">${r.cost} EXP</div>
+                html += '<div class="quest-list">';
+                persistentQuests.forEach(q => {
+                    html += `<div class="quest-item persistent" style="cursor:default">
+                        <div class="quest-content">
+                            <div class="quest-title">${q.title}</div>
+                            <div class="quest-meta">
+                                <span class="quest-category category-${q.category}">${getCatIcon(q.category)}</span>
+                                <span class="exp-reward">+50 EXP</span>
+                            </div>
                         </div>
-                        <button class="reward-btn ${canAfford ? 'can-afford' : 'cannot-afford'}" onclick="${canAfford ? `claimReward('${r.id}')` : ''}">${canAfford ? 'Tebus' : '🔒'}</button>
-                        <button class="btn-icon" style="background:#f0f0f0;margin-left:8px" onclick="openRewardModal('${r.id}')">✏️</button>
-                        <button class="btn-icon" style="background:#fff0f0;color:var(--danger);margin-left:4px" onclick="deleteReward('${r.id}')">🗑️</button>
+                        <button class="btn-icon" style="background:#fff0f0;color:var(--danger)" onclick="openDelete('${q.id}','persistent')">🗑️</button>
                     </div>`;
                 });
+                html += '</div>';
             }
             
             return html;
