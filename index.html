@@ -207,6 +207,14 @@
         .reward-icon-btn { padding: 10px 14px; font-size: 20px; border: 2px solid #eee; border-radius: 10px; background: white; cursor: pointer; }
         .reward-icon-btn.selected { border-color: var(--primary); background: rgba(0,184,148,0.1); }
         
+        /* Verifier Profile */
+        .verifier-profile { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%); border-radius: 12px; border: 2px solid var(--primary-light); }
+        .verifier-info { display: flex; align-items: center; gap: 12px; }
+        .verifier-avatar { width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .verifier-details { display: flex; flex-direction: column; }
+        .verifier-name { font-weight: 700; color: var(--text-dark); font-size: 15px; }
+        .verifier-email { font-size: 12px; color: var(--text-muted); }
+        
         .hidden { display: none !important; }
         .celebration { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 9999; }
         .confetti { position: absolute; width: 10px; height: 10px; animation: fall 3s forwards; }
@@ -1488,6 +1496,26 @@
             const data = snap.val() || {};
             const levelData = calculateLevel(userExp);
             
+            // Load verifier profile if exists
+            let verifierHtml = '';
+            if (verifierUid) {
+                const vSnap = await db.ref(`users/${verifierUid}`).once('value');
+                const vData = vSnap.val() || {};
+                verifierHtml = `
+                    <div class="verifier-profile">
+                        <div class="verifier-info">
+                            <div class="verifier-avatar">👤</div>
+                            <div class="verifier-details">
+                                <div class="verifier-name">${vData.displayName || 'User'}</div>
+                                <div class="verifier-email">${vData.email || '-'}</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-danger btn-sm" onclick="removeVerifier()">Buang</button>
+                    </div>`;
+            } else {
+                verifierHtml = `<div class="settings-item"><span class="settings-label">Tiada pengesah</span><button class="btn btn-primary btn-sm" onclick="openModal('verifierModal')">Tambah</button></div>`;
+            }
+            
             return `
                 <div class="settings-section">
                     <div class="settings-title">Akaun</div>
@@ -1512,10 +1540,7 @@
                 
                 <div class="settings-section">
                     <div class="settings-title">👁️ Pengesah</div>
-                    ${verifierUid ? 
-                        `<div class="settings-item"><span class="settings-label">Ada pengesah</span><button class="btn btn-danger btn-sm" onclick="removeVerifier()">Buang</button></div>` :
-                        `<div class="settings-item"><span class="settings-label">Tiada pengesah</span><button class="btn btn-primary btn-sm" onclick="openModal('verifierModal')">Tambah</button></div>`
-                    }
+                    ${verifierHtml}
                 </div>
                 
                 <div class="settings-section">
