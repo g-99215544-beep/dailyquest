@@ -919,36 +919,51 @@
             const category = document.getElementById('questCategory').value;
             if (!title) return alert('Sila masukkan tajuk');
             
-            if (questType === 'persistent') {
-                await db.ref(`persistentQuests/${currentUser.odUid}`).push({
-                    title, category, status: 'pending', createdAt: Date.now()
-                });
-                await loadPersistent();
-            } else {
-                const selectedDays = [...document.querySelectorAll('.day-checkbox:checked')].map(cb => parseInt(cb.value));
-                if (selectedDays.length === 0) return alert('Pilih sekurang-kurangnya satu hari');
-                
-                if (editingId) {
-                    await db.ref(`questTemplates/${currentUser.odUid}/${editingId}`).update({ title, category, daysOfWeek: selectedDays });
-                } else {
-                    const newRef = await db.ref(`questTemplates/${currentUser.odUid}`).push({ title, category, daysOfWeek: selectedDays, createdAt: Date.now() });
-                    
-                    // Kalau hari ini dipilih, terus tambah ke dailyQuests
-                    const dow = new Date().getDay();
-                    const adjToday = dow === 0 ? 7 : dow;
-                    if (selectedDays.includes(adjToday)) {
-                        const today = getDateStr(new Date());
-                        await db.ref(`dailyQuests/${currentUser.odUid}/${today}`).push({
-                            templateId: newRef.key, title, category, status: 'pending', createdAt: Date.now()
-                        });
-                    }
-                }
-                await loadTemplates();
-                await loadToday();
-            }
+            console.log('Saving quest:', { title, category, questType });
             
-            closeModal('questModal');
-            renderScreen();
+            try {
+                if (questType === 'persistent') {
+                    await db.ref(`persistentQuests/${currentUser.odUid}`).push({
+                        title, category, status: 'pending', createdAt: Date.now()
+                    });
+                    await loadPersistent();
+                } else {
+                    const selectedDays = [...document.querySelectorAll('.day-checkbox:checked')].map(cb => parseInt(cb.value));
+                    console.log('Selected days:', selectedDays);
+                    if (selectedDays.length === 0) return alert('Pilih sekurang-kurangnya satu hari');
+                    
+                    if (editingId) {
+                        await db.ref(`questTemplates/${currentUser.odUid}/${editingId}`).update({ title, category, daysOfWeek: selectedDays });
+                    } else {
+                        console.log('Creating new template...');
+                        const newRef = await db.ref(`questTemplates/${currentUser.odUid}`).push({ title, category, daysOfWeek: selectedDays, createdAt: Date.now() });
+                        console.log('Template created:', newRef.key);
+                        
+                        // Kalau hari ini dipilih, terus tambah ke dailyQuests
+                        const dow = new Date().getDay();
+                        const adjToday = dow === 0 ? 7 : dow;
+                        console.log('Today is day:', adjToday, 'Selected includes today:', selectedDays.includes(adjToday));
+                        
+                        if (selectedDays.includes(adjToday)) {
+                            const today = getDateStr(new Date());
+                            console.log('Adding to dailyQuests for:', today);
+                            await db.ref(`dailyQuests/${currentUser.odUid}/${today}`).push({
+                                templateId: newRef.key, title, category, status: 'pending', createdAt: Date.now()
+                            });
+                            console.log('Added to dailyQuests');
+                        }
+                    }
+                    await loadTemplates();
+                    await loadToday();
+                }
+                
+                closeModal('questModal');
+                renderScreen();
+                console.log('Quest saved successfully');
+            } catch (err) {
+                console.error('Error saving quest:', err);
+                alert('Error: ' + err.message);
+            }
         }
 
         function editTemplate(id) {
