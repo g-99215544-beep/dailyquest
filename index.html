@@ -954,35 +954,46 @@
                     console.log('Selected days:', selectedDays);
                     if (selectedDays.length === 0) return alert('Pilih sekurang-kurangnya satu hari');
                     
+                    const dow = new Date().getDay();
+                    const adjToday = dow === 0 ? 7 : dow;
+                    const today = getDateStr(new Date());
+                    
                     if (editingId) {
                         console.log('Updating template:', editingId);
                         await db.ref(`questTemplates/${currentUser.odUid}/${editingId}`).update({ title, category, daysOfWeek: selectedDays });
                     } else {
-                        console.log('Creating new template at path:', `questTemplates/${currentUser.odUid}`);
+                        console.log('Creating new template...');
                         const newRef = await db.ref(`questTemplates/${currentUser.odUid}`).push({ title, category, daysOfWeek: selectedDays, createdAt: Date.now() });
                         console.log('Template created with key:', newRef.key);
                         
                         // Kalau hari ini dipilih, terus tambah ke dailyQuests
-                        const dow = new Date().getDay();
-                        const adjToday = dow === 0 ? 7 : dow;
                         console.log('Today is day:', adjToday, 'Selected includes today:', selectedDays.includes(adjToday));
                         
                         if (selectedDays.includes(adjToday)) {
-                            const today = getDateStr(new Date());
                             console.log('Adding to dailyQuests at path:', `dailyQuests/${currentUser.odUid}/${today}`);
-                            await db.ref(`dailyQuests/${currentUser.odUid}/${today}`).push({
+                            const questRef = await db.ref(`dailyQuests/${currentUser.odUid}/${today}`).push({
                                 templateId: newRef.key, title, category, status: 'pending', createdAt: Date.now()
                             });
-                            console.log('Added to dailyQuests successfully!');
+                            console.log('Added to dailyQuests with key:', questRef.key);
+                            
+                            // Tambah terus ke array tanpa perlu reload dari Firebase
+                            todayQuests.push({
+                                id: questRef.key,
+                                templateId: newRef.key,
+                                title,
+                                category,
+                                status: 'pending',
+                                createdAt: Date.now()
+                            });
+                            console.log('Added to local todayQuests array, new length:', todayQuests.length);
                         }
                     }
                     await loadTemplates();
-                    await loadToday();
                 }
                 
                 closeModal('questModal');
-                await renderScreen();
-                console.log('Quest saved successfully!');
+                renderScreen();
+                console.log('Quest saved and rendered successfully!');
             } catch (err) {
                 console.error('Error saving quest:', err);
                 alert('Error: ' + err.message);
