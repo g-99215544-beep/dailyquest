@@ -632,14 +632,25 @@
 
         // Show Main App
         async function showMainApp() {
+            console.log('=== showMainApp called ===');
+            console.log('currentUser:', currentUser);
+            
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('setupPinScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
             
             await loadUserData();
+            console.log('User data loaded');
+            
             await loadTemplates();
+            console.log('Templates loaded:', questTemplates.length);
+            
             await loadPersistent();
+            console.log('Persistent loaded:', persistentQuests.length);
+            
             await generateToday();
+            console.log('Today generated, todayQuests:', todayQuests.length);
+            
             await loadUsersToVerify();
             await loadRewards();
             
@@ -733,12 +744,18 @@
             const dow = new Date().getDay();
             const adjDay = dow === 0 ? 7 : dow;
             
+            console.log('generateToday - date:', today, 'day:', adjDay);
+            console.log('generateToday - path:', `dailyQuests/${currentUser.odUid}/${today}`);
+            
             const snap = await db.ref(`dailyQuests/${currentUser.odUid}/${today}`).once('value');
             const existing = snap.val() || {};
+            console.log('Existing quests in DB:', existing);
+            
             const existIds = Object.values(existing).map(q => q.templateId);
             
             for (const t of questTemplates) {
                 if (t.daysOfWeek && t.daysOfWeek.includes(adjDay) && !existIds.includes(t.id)) {
+                    console.log('Creating quest from template:', t.title);
                     await db.ref(`dailyQuests/${currentUser.odUid}/${today}`).push({
                         templateId: t.id, title: t.title, category: t.category, status: 'pending', createdAt: Date.now()
                     });
@@ -748,9 +765,12 @@
         }
 
         async function loadToday() {
-            const snap = await db.ref(`dailyQuests/${currentUser.odUid}/${getDateStr(new Date())}`).once('value');
+            const todayStr = getDateStr(new Date());
+            console.log('Loading today quests for:', todayStr);
+            const snap = await db.ref(`dailyQuests/${currentUser.odUid}/${todayStr}`).once('value');
             todayQuests = [];
             snap.forEach(c => todayQuests.push({ id: c.key, ...c.val() }));
+            console.log('Loaded todayQuests:', todayQuests.length, todayQuests);
         }
 
         // Load users to verify
@@ -919,13 +939,15 @@
             const category = document.getElementById('questCategory').value;
             if (!title) return alert('Sila masukkan tajuk');
             
-            console.log('Saving quest:', { title, category, questType });
+            console.log('Saving quest:', { title, category, questType, uid: currentUser.odUid });
             
             try {
                 if (questType === 'persistent') {
+                    console.log('Saving persistent quest...');
                     await db.ref(`persistentQuests/${currentUser.odUid}`).push({
                         title, category, status: 'pending', createdAt: Date.now()
                     });
+                    console.log('Persistent quest saved!');
                     await loadPersistent();
                 } else {
                     const selectedDays = [...document.querySelectorAll('.day-checkbox:checked')].map(cb => parseInt(cb.value));
@@ -933,11 +955,12 @@
                     if (selectedDays.length === 0) return alert('Pilih sekurang-kurangnya satu hari');
                     
                     if (editingId) {
+                        console.log('Updating template:', editingId);
                         await db.ref(`questTemplates/${currentUser.odUid}/${editingId}`).update({ title, category, daysOfWeek: selectedDays });
                     } else {
-                        console.log('Creating new template...');
+                        console.log('Creating new template at path:', `questTemplates/${currentUser.odUid}`);
                         const newRef = await db.ref(`questTemplates/${currentUser.odUid}`).push({ title, category, daysOfWeek: selectedDays, createdAt: Date.now() });
-                        console.log('Template created:', newRef.key);
+                        console.log('Template created with key:', newRef.key);
                         
                         // Kalau hari ini dipilih, terus tambah ke dailyQuests
                         const dow = new Date().getDay();
@@ -946,11 +969,11 @@
                         
                         if (selectedDays.includes(adjToday)) {
                             const today = getDateStr(new Date());
-                            console.log('Adding to dailyQuests for:', today);
+                            console.log('Adding to dailyQuests at path:', `dailyQuests/${currentUser.odUid}/${today}`);
                             await db.ref(`dailyQuests/${currentUser.odUid}/${today}`).push({
                                 templateId: newRef.key, title, category, status: 'pending', createdAt: Date.now()
                             });
-                            console.log('Added to dailyQuests');
+                            console.log('Added to dailyQuests successfully!');
                         }
                     }
                     await loadTemplates();
@@ -958,8 +981,8 @@
                 }
                 
                 closeModal('questModal');
-                renderScreen();
-                console.log('Quest saved successfully');
+                await renderScreen();
+                console.log('Quest saved successfully!');
             } catch (err) {
                 console.error('Error saving quest:', err);
                 alert('Error: ' + err.message);
