@@ -379,15 +379,65 @@ function renderUserInfo() {
     document.getElementById('levelProgressFill').style.width = `${progressPercent}%`;
 }
 
-function renderWeekSummary() {
+async function renderWeekSummary() {
     const today = getTodayDayOfWeek();
     
+    // Get current week's start and end dates
+    const now = new Date();
+    const currentDay = now.getDay();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - currentDay + (currentDay === 0 ? -6 : 1)); // Start from Monday
+    
+    // Load quest data for the week
     for (let i = 0; i <= 6; i++) {
-        const dayEl = document.querySelector(`.week-day[data-day="${i}"]`);
-        if (i === today) {
+        const dayIndex = (i + 1) % 7; // Convert: 0=Mon -> 1, 1=Tue -> 2, ..., 6=Sun -> 0
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + i);
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        
+        const dayEl = document.querySelector(`.week-day[data-day="${dayIndex}"]`);
+        const displayEl = dayEl.querySelector('span:last-child');
+        
+        if (dayIndex === today) {
             dayEl.classList.add('today');
         } else {
             dayEl.classList.remove('today');
+        }
+        
+        // Load quests for this date
+        try {
+            const snapshot = await db.ref(`dailyQuests/${currentUser.uid}/${dateStr}`).once('value');
+            
+            if (snapshot.exists()) {
+                const quests = [];
+                snapshot.forEach((child) => {
+                    quests.push(child.val());
+                });
+                
+                const total = quests.length;
+                const completed = quests.filter(q => q.status === 'completed' || q.status === 'verified').length;
+                
+                if (total > 0) {
+                    if (completed === total) {
+                        displayEl.textContent = '✓';
+                        displayEl.style.color = '#6bcf7f';
+                        displayEl.style.fontSize = '1.5rem';
+                    } else {
+                        displayEl.textContent = `${completed}/${total}`;
+                        displayEl.style.fontSize = '0.85rem';
+                        displayEl.style.fontWeight = '700';
+                    }
+                } else {
+                    displayEl.textContent = '·';
+                    displayEl.style.fontSize = '1.4rem';
+                }
+            } else {
+                displayEl.textContent = '·';
+                displayEl.style.fontSize = '1.4rem';
+            }
+        } catch (error) {
+            console.error('Error loading week summary:', error);
+            displayEl.textContent = '·';
         }
     }
 }
@@ -549,6 +599,7 @@ async function toggleDailyQuest(questId) {
         renderTodayQuests();
         updateProgress();
         renderUserInfo();
+        renderWeekSummary(); // Update week summary
     } catch (error) {
         console.error('Toggle quest error:', error);
         showToast('Ralat mengemas kini quest');
