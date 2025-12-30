@@ -729,6 +729,8 @@ async function saveQuest() {
                 return;
             }
             
+            let templateId = editId; // Store template ID here
+            
             if (editId) {
                 await db.ref(`questTemplates/${currentUser.uid}/${editId}`).update({
                     title,
@@ -751,6 +753,8 @@ async function saveQuest() {
                     createdAt: Date.now()
                 });
                 
+                templateId = newTemplateRef.key; // Store the new template ID
+                
                 questTemplates.push({
                     id: newTemplateRef.key,
                     title,
@@ -765,7 +769,7 @@ async function saveQuest() {
             if (selectedDays.includes(today) && !editId) {
                 const newQuestRef = db.ref(`dailyQuests/${currentUser.uid}/${todayDate}`).push();
                 await newQuestRef.set({
-                    templateId: newTemplateRef.key,
+                    templateId: templateId, // Use stored template ID
                     title,
                     category,
                     status: 'pending',
@@ -776,7 +780,7 @@ async function saveQuest() {
                 
                 todayQuests.push({
                     id: newQuestRef.key,
-                    templateId: newTemplateRef.key,
+                    templateId: templateId, // Use stored template ID
                     title,
                     category,
                     status: 'pending',
@@ -790,10 +794,11 @@ async function saveQuest() {
         renderPersistentQuests();
         renderTemplates();
         updateProgress();
+        await renderWeekSummary(); // Update week summary
         showToast(editId ? 'Quest dikemas kini' : 'Quest ditambah');
     } catch (error) {
         console.error('Save quest error:', error);
-        showToast('Ralat menyimpan quest');
+        showToast('Ralat: ' + (error.message || 'Tidak dapat menyimpan quest'));
     }
 }
 
