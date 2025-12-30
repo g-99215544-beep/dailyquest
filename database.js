@@ -1,12 +1,13 @@
 // ===== FIREBASE CONFIGURATION =====
 const firebaseConfig = {
-    apiKey: "AIzaSyCxNJ0z140lmYJPSMFCPOBkBsmuCxvLn4M",
+    apiKey: "AIzaSyCzjLQqOFHFKLescOm3XeNtP5vceNInW6s",
     authDomain: "dailyquest-e7d7b.firebaseapp.com",
     databaseURL: "https://dailyquest-e7d7b-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "dailyquest-e7d7b",
     storageBucket: "dailyquest-e7d7b.firebasestorage.app",
-    messagingSenderId: "553089973498",
-    appId: "1:553089973498:web:22e7617df0b8fd95cf96e8"
+    messagingSenderId: "372073463598",
+    appId: "1:372073463598:web:22aaa1c892a2256369c4bf",
+    measurementId: "G-JMXNMVMZL5"
 };
 
 // Initialize Firebase
