@@ -242,14 +242,20 @@ function logout() {
 async function initApp() {
     showAppScreen();
     
+    // Load user data first
     await loadUserProfile();
+    
+    // Load templates first (needed to identify orphaned quests)
     await loadTemplates();
+    
+    // Load quests (will auto-cleanup orphaned quests)
     await loadPersistentQuests();
     await generateTodayQuests();
-    await loadTodayQuests();
+    await loadTodayQuests(); // This now includes orphan cleanup
     
+    // Render all
     renderUserInfo();
-    renderWeekSummary();
+    await renderWeekSummary();
     renderTodayQuests();
     renderPersistentQuests();
     renderTemplates();
@@ -351,13 +357,35 @@ async function loadTodayQuests() {
     try {
         const snapshot = await db.ref(`dailyQuests/${currentUser.uid}/${today}`).once('value');
         todayQuests = [];
+        const orphanedQuests = []; // Track orphaned quests for cleanup
+        
         if (snapshot.exists()) {
             snapshot.forEach((child) => {
-                todayQuests.push({
-                    id: child.key,
-                    ...child.val()
-                });
+                const quest = child.val();
+                
+                // Check if template still exists (skip orphaned quests)
+                const templateExists = questTemplates.some(t => t.id === quest.templateId);
+                
+                if (templateExists) {
+                    todayQuests.push({
+                        id: child.key,
+                        ...quest
+                    });
+                } else {
+                    // Template deleted, mark quest as orphaned
+                    orphanedQuests.push(child.key);
+                }
             });
+            
+            // Clean up orphaned quests
+            if (orphanedQuests.length > 0) {
+                const updates = {};
+                orphanedQuests.forEach(questId => {
+                    updates[questId] = null; // Mark for deletion
+                });
+                await db.ref(`dailyQuests/${currentUser.uid}/${today}`).update(updates);
+                console.log(`Cleaned up ${orphanedQuests.length} orphaned quests`);
+            }
         }
     } catch (error) {
         console.error('Load today quests error:', error);
@@ -512,7 +540,11 @@ function renderTemplates() {
     } else {
         container.innerHTML = questTemplates.map(template => {
             const dayNames = ['Ahd', 'Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab'];
-            const days = template.daysOfWeek.map(d => dayNames[d]).join(', ');
+            // Filter out invalid day values and map to names
+            const days = template.daysOfWeek
+                .filter(d => d >= 0 && d <= 6) // Only valid days (0-6)
+                .map(d => dayNames[d])
+                .join(', ');
             
             return `
                 <div class="template-item">
@@ -526,7 +558,10 @@ function renderTemplates() {
                         </div>
                     </div>
                     <div class="template-days">
-                        ${template.daysOfWeek.map(d => `<span class="day-tag">${dayNames[d]}</span>`).join('')}
+                        ${template.daysOfWeek
+                            .filter(d => d >= 0 && d <= 6)
+                            .map(d => `<span class="day-tag">${dayNames[d]}</span>`)
+                            .join('')}
                     </div>
                 </div>
             `;
@@ -821,13 +856,40 @@ async function editTemplate(templateId) {
 }
 
 async function deleteTemplate(templateId) {
-    if (!confirm('Adakah anda pasti mahu memadam template ini?')) return;
+    if (!confirm('Adakah anda pasti mahu memadam template ini? Semua quest yang berkaitan akan dipadam.')) return;
     
     try {
+        // Delete the template
         await db.ref(`questTemplates/${currentUser.uid}/${templateId}`).remove();
         questTemplates = questTemplates.filter(t => t.id !== templateId);
+        
+        // Delete all daily quests associated with this template
+        const today = getTodayDate();
+        const dailyQuestsRef = db.ref(`dailyQuests/${currentUser.uid}/${today}`);
+        const snapshot = await dailyQuestsRef.once('value');
+        
+        if (snapshot.exists()) {
+            const updates = {};
+            snapshot.forEach((child) => {
+                const quest = child.val();
+                if (quest.templateId === templateId) {
+                    updates[child.key] = null; // Mark for deletion
+                    // Remove from local array too
+                    todayQuests = todayQuests.filter(q => q.id !== child.key);
+                }
+            });
+            
+            // Apply deletions
+            if (Object.keys(updates).length > 0) {
+                await dailyQuestsRef.update(updates);
+            }
+        }
+        
         renderTemplates();
-        showToast('Template dipadam');
+        renderTodayQuests();
+        updateProgress();
+        await renderWeekSummary();
+        showToast('Template dan quest berkaitan dipadam');
     } catch (error) {
         console.error('Delete template error:', error);
         showToast('Ralat memadam template');
