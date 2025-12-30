@@ -185,7 +185,7 @@
         .modal.active { display: flex; }
 
         .modal-content {
-            background: white;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
             border-radius: 20px;
             width: 100%;
             max-width: 400px;
@@ -193,6 +193,7 @@
             overflow-y: auto;
             box-shadow: 0 10px 40px var(--shadow-lg);
             animation: modalSlideUp 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.8);
         }
 
         @keyframes modalSlideUp {
@@ -208,15 +209,16 @@
 
         .modal-header {
             padding: 1.5rem;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 2px solid rgba(162, 155, 254, 0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .modal-header h2 {
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             font-weight: 700;
+            color: var(--text-primary);
         }
 
         .modal-close {
@@ -458,8 +460,14 @@
         }
 
         .week-day span:last-child { 
-            font-size: 1.4rem;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            font-size: 1.2rem;
+            font-weight: 700;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+            display: block;
+            min-height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .week-day.today {
@@ -634,12 +642,13 @@
             color: var(--success);
         }
 
-        /* ===== Template Item ===== */
+        /* ===== Template Item (Urus Tab) ===== */
         .template-item {
-            background: white;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
             padding: 1rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px var(--shadow);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.8);
             margin-bottom: 10px;
         }
 
@@ -651,10 +660,12 @@
         }
 
         .template-title {
-            font-weight: 600;
+            font-weight: 700;
             display: flex;
             align-items: center;
             gap: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
         }
 
         .template-actions {
@@ -663,37 +674,43 @@
         }
 
         .btn-icon {
-            background: var(--background);
-            border: none;
+            background: rgba(162, 155, 254, 0.15);
+            border: 2px solid rgba(162, 155, 254, 0.3);
             padding: 8px 12px;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 1rem;
+            font-size: 1.1rem;
         }
 
         .btn-icon:hover {
-            background: var(--border);
-            transform: scale(1.05);
+            background: rgba(162, 155, 254, 0.3);
+            transform: scale(1.1);
+            border-color: rgba(162, 155, 254, 0.5);
         }
 
         .btn-icon.danger:hover {
-            background: #fee;
-            color: var(--danger);
+            background: rgba(255, 99, 72, 0.2);
+            border-color: rgba(255, 99, 72, 0.5);
         }
 
         .template-days {
             font-size: 0.85rem;
             color: var(--text-secondary);
+            margin-top: 8px;
         }
 
         .day-tag {
             display: inline-block;
-            padding: 2px 8px;
-            background: var(--background);
-            border-radius: 8px;
-            margin-right: 4px;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            color: white;
+            border-radius: 12px;
+            margin-right: 6px;
             margin-top: 4px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            box-shadow: 0 2px 6px rgba(162, 155, 254, 0.3);
         }
 
         /* ===== Quest Type Toggle ===== */
@@ -705,19 +722,27 @@
 
         .type-btn {
             flex: 1;
-            padding: 10px;
-            background: var(--background);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            font-weight: 600;
+            padding: 12px;
+            background: rgba(162, 155, 254, 0.1);
+            border: 2px solid rgba(162, 155, 254, 0.3);
+            border-radius: 14px;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s;
+            color: var(--text-primary);
         }
 
         .type-btn.active {
-            background: var(--primary);
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
             color: white;
-            border-color: var(--primary);
+            border-color: #a29bfe;
+            box-shadow: 0 4px 12px rgba(162, 155, 254, 0.4);
+            transform: scale(1.05);
+        }
+
+        .type-btn:hover:not(.active) {
+            background: rgba(162, 155, 254, 0.2);
+            border-color: rgba(162, 155, 254, 0.5);
         }
 
         /* ===== Days Grid ===== */
@@ -732,43 +757,52 @@
             flex-direction: column;
             align-items: center;
             gap: 6px;
-            padding: 10px;
-            background: var(--background);
-            border: 2px solid var(--border);
-            border-radius: 12px;
+            padding: 12px;
+            background: rgba(162, 155, 254, 0.1);
+            border: 2px solid rgba(162, 155, 254, 0.3);
+            border-radius: 14px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s;
+        }
+
+        .day-checkbox:hover {
+            background: rgba(162, 155, 254, 0.15);
+            border-color: rgba(162, 155, 254, 0.5);
+            transform: scale(1.05);
         }
 
         .day-checkbox input { display: none; }
         .day-checkbox input:checked + span { color: white; }
 
         .day-checkbox:has(input:checked) {
-            background: var(--primary);
-            border-color: var(--primary);
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            border-color: #a29bfe;
             color: white;
+            box-shadow: 0 4px 12px rgba(162, 155, 254, 0.4);
+            transform: scale(1.05);
         }
 
         .day-checkbox span {
-            font-weight: 600;
-            font-size: 0.9rem;
+            font-weight: 700;
+            font-size: 0.95rem;
         }
 
         /* ===== Settings ===== */
         .settings-container { max-width: 600px; }
 
         .settings-section {
-            background: white;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
             padding: 1.5rem;
-            border-radius: 16px;
+            border-radius: 20px;
             margin-bottom: 1rem;
-            box-shadow: 0 2px 8px var(--shadow);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.8);
         }
 
         .settings-section h3 {
             font-size: 1rem;
             font-weight: 700;
-            color: var(--text-secondary);
+            color: var(--text-primary);
             margin-bottom: 1rem;
         }
 
@@ -1016,27 +1050,40 @@
         .empty-state {
             text-align: center;
             padding: 3rem 1rem;
-            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            margin: 1rem 0;
         }
 
         .empty-state-icon {
             font-size: 4rem;
             margin-bottom: 1rem;
-            opacity: 0.5;
+            opacity: 0.6;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
         }
 
-        .empty-state-text { font-size: 1rem; }
+        .empty-state-text { 
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
 
         /* ===== History ===== */
         .history-container { max-width: 600px; }
 
         .history-header {
-            background: white;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
             padding: 1rem;
-            border-radius: 12px;
+            border-radius: 16px;
             margin-bottom: 1rem;
-            box-shadow: 0 2px 8px var(--shadow);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.8);
             text-align: center;
+        }
+
+        .history-header h2 {
+            color: var(--text-primary);
+            font-weight: 700;
         }
 
         /* ===== Responsive ===== */
