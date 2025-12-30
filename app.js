@@ -1,0 +1,974 @@
+// ===== Global State =====
+let currentUser = null;
+let questTemplates = [];
+let todayQuests = [];
+let persistentQuests = [];
+let userProfile = null;
+
+// ===== Category Icons =====
+const categoryIcons = {
+    home: '🏠',
+    work: '💼',
+    fitness: '💪',
+    learning: '📚',
+    self: '🧘',
+    other: '✨'
+};
+
+// ===== Category Names =====
+const categoryNames = {
+    home: 'Rumah',
+    work: 'Kerja',
+    fitness: 'Kecergasan',
+    learning: 'Pembelajaran',
+    self: 'Self-care',
+    other: 'Lain-lain'
+};
+
+// ===== EXP Values =====
+const EXP_DAILY_QUEST = 10;
+const EXP_PERSISTENT_QUEST = 50;
+const EXP_COMPLETE_ALL_BONUS = 20;
+
+// ===== Helper Functions =====
+function getTodayDate() {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+}
+
+function getTodayDayOfWeek() {
+    return new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+}
+
+function generateIdCode(uid) {
+    // Generate 6-character code from UID hash
+    let hash = 0;
+    for (let i = 0; i < uid.length; i++) {
+        hash = ((hash << 5) - hash) + uid.charCodeAt(i);
+        hash = hash & hash;
+    }
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    let absHash = Math.abs(hash);
+    for (let i = 0; i < 6; i++) {
+        code += chars[absHash % chars.length];
+        absHash = Math.floor(absHash / chars.length);
+    }
+    return code;
+}
+
+function calculateLevel(exp) {
+    let level = 1;
+    let totalExp = 0;
+    while (totalExp + (level * 100) <= exp) {
+        totalExp += level * 100;
+        level++;
+    }
+    return {
+        level,
+        currentExp: exp - totalExp,
+        expToNext: level * 100
+    };
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// ===== Authentication Functions =====
+function checkAuthState() {
+    const savedCreds = localStorage.getItem('dailyquest_creds');
+    if (savedCreds) {
+        const { idCode, pin } = JSON.parse(savedCreds);
+        loginWithIdCode(idCode, pin);
+    } else {
+        showLoginScreen();
+    }
+}
+
+function showLoginScreen() {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('appScreen').style.display = 'none';
+}
+
+function showAppScreen() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'flex';
+}
+
+async function loginWithGoogle() {
+    try {
+        const result = await auth.signInWithPopup(googleProvider);
+        currentUser = result.user;
+        
+        // Check if user exists in database
+        const userSnapshot = await db.ref(`users/${currentUser.uid}`).once('value');
+        
+        if (!userSnapshot.exists()) {
+            // New user - show PIN setup
+            showPinSetupModal();
+        } else {
+            // Existing user
+            userProfile = userSnapshot.val();
+            // Save credentials
+            localStorage.setItem('dailyquest_creds', JSON.stringify({
+                idCode: userProfile.idCode,
+                pin: userProfile.pin
+            }));
+            initApp();
+        }
+    } catch (error) {
+        console.error('Google login error:', error);
+        showToast('Ralat log masuk: ' + error.message);
+    }
+}
+
+async function loginWithIdCode(idCode, pin) {
+    try {
+        // Search for user with matching ID Code
+        const usersSnapshot = await db.ref('users').orderByChild('idCode').equalTo(idCode.toUpperCase()).once('value');
+        
+        if (!usersSnapshot.exists()) {
+            showToast('ID Code tidak dijumpai');
+            showLoginScreen();
+            return;
+        }
+        
+        // Check PIN
+        const userData = Object.values(usersSnapshot.val())[0];
+        const uid = Object.keys(usersSnapshot.val())[0];
+        
+        if (userData.pin !== pin) {
+            showToast('PIN tidak tepat');
+            return;
+        }
+        
+        // Login success
+        userProfile = userData;
+        currentUser = { uid, email: userData.email, displayName: userData.displayName };
+        
+        // Save credentials
+        localStorage.setItem('dailyquest_creds', JSON.stringify({ idCode, pin }));
+        
+        closeIdLoginModal();
+        initApp();
+    } catch (error) {
+        console.error('ID Code login error:', error);
+        showToast('Ralat log masuk');
+    }
+}
+
+function showPinSetupModal() {
+    document.getElementById('pinSetupModal').classList.add('active');
+}
+
+function closePinSetupModal() {
+    document.getElementById('pinSetupModal').classList.remove('active');
+}
+
+async function setupPin() {
+    const newPin = document.getElementById('newPinInput').value;
+    const confirmPin = document.getElementById('confirmPinInput').value;
+    
+    if (!newPin || newPin.length !== 4) {
+        showToast('PIN mestilah 4 digit');
+        return;
+    }
+    
+    if (newPin !== confirmPin) {
+        showToast('PIN tidak sepadan');
+        return;
+    }
+    
+    try {
+        const idCode = generateIdCode(currentUser.uid);
+        
+        // Save user profile to Firebase
+        await db.ref(`users/${currentUser.uid}`).set({
+            displayName: currentUser.displayName,
+            email: currentUser.email,
+            idCode,
+            pin: newPin,
+            totalExp: 0,
+            createdAt: Date.now()
+        });
+        
+        userProfile = {
+            displayName: currentUser.displayName,
+            email: currentUser.email,
+            idCode,
+            pin: newPin,
+            totalExp: 0
+        };
+        
+        // Save credentials
+        localStorage.setItem('dailyquest_creds', JSON.stringify({ idCode, pin: newPin }));
+        
+        closePinSetupModal();
+        showToast('Akaun berjaya dibuat!');
+        initApp();
+    } catch (error) {
+        console.error('PIN setup error:', error);
+        showToast('Ralat menyimpan PIN');
+    }
+}
+
+function logout() {
+    if (confirm('Adakah anda pasti mahu log keluar?')) {
+        localStorage.removeItem('dailyquest_creds');
+        auth.signOut();
+        currentUser = null;
+        userProfile = null;
+        questTemplates = [];
+        todayQuests = [];
+        persistentQuests = [];
+        showLoginScreen();
+        showToast('Berjaya log keluar');
+    }
+}
+
+// ===== App Initialization =====
+async function initApp() {
+    showAppScreen();
+    
+    // Load user data
+    await loadUserProfile();
+    
+    // Load quest data
+    await loadTemplates();
+    await loadPersistentQuests();
+    await generateTodayQuests();
+    await loadTodayQuests();
+    
+    // Render all
+    renderUserInfo();
+    renderWeekSummary();
+    renderTodayQuests();
+    renderPersistentQuests();
+    renderTemplates();
+    updateProgress();
+}
+
+async function loadUserProfile() {
+    try {
+        const snapshot = await db.ref(`users/${currentUser.uid}`).once('value');
+        if (snapshot.exists()) {
+            userProfile = snapshot.val();
+        }
+    } catch (error) {
+        console.error('Load user profile error:', error);
+    }
+}
+
+async function loadTemplates() {
+    try {
+        const snapshot = await db.ref(`questTemplates/${currentUser.uid}`).once('value');
+        questTemplates = [];
+        if (snapshot.exists()) {
+            snapshot.forEach((child) => {
+                questTemplates.push({
+                    id: child.key,
+                    ...child.val()
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Load templates error:', error);
+    }
+}
+
+async function loadPersistentQuests() {
+    try {
+        const snapshot = await db.ref(`persistentQuests/${currentUser.uid}`).once('value');
+        persistentQuests = [];
+        if (snapshot.exists()) {
+            snapshot.forEach((child) => {
+                persistentQuests.push({
+                    id: child.key,
+                    ...child.val()
+                });
+            });
+        }
+        
+        // Clean up completed quests from previous days
+        const today = getTodayDate();
+        const completedToRemove = persistentQuests.filter(q => 
+            q.status === 'completed' && q.completedDate && q.completedDate !== today
+        );
+        
+        for (const quest of completedToRemove) {
+            await db.ref(`persistentQuests/${currentUser.uid}/${quest.id}`).remove();
+        }
+        
+        // Reload after cleanup
+        persistentQuests = persistentQuests.filter(q => 
+            q.status !== 'completed' || q.completedDate === today
+        );
+    } catch (error) {
+        console.error('Load persistent quests error:', error);
+    }
+}
+
+async function generateTodayQuests() {
+    const today = getTodayDate();
+    const todayDay = getTodayDayOfWeek();
+    
+    try {
+        // Check which templates should generate quests today
+        for (const template of questTemplates) {
+            if (template.daysOfWeek && template.daysOfWeek.includes(todayDay)) {
+                // Check if quest already exists for today
+                const existingSnapshot = await db.ref(`dailyQuests/${currentUser.uid}/${today}`)
+                    .orderByChild('templateId')
+                    .equalTo(template.id)
+                    .once('value');
+                
+                if (!existingSnapshot.exists()) {
+                    // Create new quest for today
+                    const newQuestRef = db.ref(`dailyQuests/${currentUser.uid}/${today}`).push();
+                    await newQuestRef.set({
+                        templateId: template.id,
+                        title: template.title,
+                        category: template.category,
+                        status: 'pending',
+                        createdAt: Date.now(),
+                        completedAt: null,
+                        verifiedAt: null
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Generate today quests error:', error);
+    }
+}
+
+async function loadTodayQuests() {
+    const today = getTodayDate();
+    
+    try {
+        const snapshot = await db.ref(`dailyQuests/${currentUser.uid}/${today}`).once('value');
+        todayQuests = [];
+        if (snapshot.exists()) {
+            snapshot.forEach((child) => {
+                todayQuests.push({
+                    id: child.key,
+                    ...child.val()
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Load today quests error:', error);
+    }
+}
+
+// ===== Render Functions =====
+function renderUserInfo() {
+    document.getElementById('userName').textContent = userProfile.displayName || '-';
+    document.getElementById('userEmail').textContent = userProfile.email || '-';
+    document.getElementById('userIdCode').textContent = userProfile.idCode || '------';
+    
+    const levelInfo = calculateLevel(userProfile.totalExp || 0);
+    document.getElementById('levelBadge').textContent = `Level ${levelInfo.level}`;
+    document.getElementById('settingsLevel').textContent = `Level ${levelInfo.level}`;
+    document.getElementById('settingsExp').textContent = `${levelInfo.currentExp} / ${levelInfo.expToNext} EXP`;
+    
+    const progressPercent = (levelInfo.currentExp / levelInfo.expToNext) * 100;
+    document.getElementById('levelProgressFill').style.width = `${progressPercent}%`;
+}
+
+function renderWeekSummary() {
+    // This will show completion status for the current week
+    // For Phase 1, we'll show basic implementation
+    const today = getTodayDayOfWeek();
+    
+    for (let i = 0; i <= 6; i++) {
+        const dayEl = document.querySelector(`.week-day[data-day="${i}"]`);
+        if (i === today) {
+            dayEl.classList.add('today');
+        } else {
+            dayEl.classList.remove('today');
+        }
+    }
+}
+
+function renderTodayQuests() {
+    const container = document.getElementById('dailyQuestList');
+    
+    if (todayQuests.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-text">Tiada quest untuk hari ini</div>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = todayQuests.map(quest => `
+        <div class="quest-item ${quest.status === 'completed' || quest.status === 'verified' ? 'completed' : ''}" onclick="toggleDailyQuest('${quest.id}')">
+            <div class="quest-checkbox"></div>
+            <div class="quest-info">
+                <div class="quest-title">${quest.title}</div>
+                <div class="quest-meta">
+                    <span class="quest-category">${categoryIcons[quest.category]} ${categoryNames[quest.category]}</span>
+                    <span class="quest-exp">+${EXP_DAILY_QUEST} EXP</span>
+                </div>
+            </div>
+            ${quest.status === 'completed' ? '<span class="quest-badge complete">✅ Complete</span>' : ''}
+            ${quest.status === 'verified' ? '<span class="quest-badge verified">✓✓ Verified</span>' : ''}
+        </div>
+    `).join('');
+}
+
+function renderPersistentQuests() {
+    const container = document.getElementById('persistentQuestList');
+    
+    if (persistentQuests.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📌</div>
+                <div class="empty-state-text">Tiada quest berterusan</div>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = persistentQuests.map(quest => `
+        <div class="quest-item ${quest.status === 'completed' ? 'completed' : ''}" onclick="togglePersistentQuest('${quest.id}')">
+            <div class="quest-checkbox"></div>
+            <div class="quest-info">
+                <div class="quest-title">${quest.title}</div>
+                <div class="quest-meta">
+                    <span class="quest-category">${categoryIcons[quest.category]} ${categoryNames[quest.category]}</span>
+                    <span class="quest-exp">+${EXP_PERSISTENT_QUEST} EXP</span>
+                </div>
+            </div>
+            ${quest.status === 'completed' ? '<span class="quest-badge complete">✅ Complete</span>' : ''}
+        </div>
+    `).join('');
+}
+
+function renderTemplates() {
+    const container = document.getElementById('templateList');
+    const persistentContainer = document.getElementById('persistentManageList');
+    
+    // Daily templates
+    if (questTemplates.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🔄</div>
+                <div class="empty-state-text">Tiada template quest</div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = questTemplates.map(template => {
+            const dayNames = ['Ahd', 'Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab'];
+            const days = template.daysOfWeek.map(d => dayNames[d]).join(', ');
+            
+            return `
+                <div class="template-item">
+                    <div class="template-header">
+                        <div class="template-title">
+                            ${categoryIcons[template.category]} ${template.title}
+                        </div>
+                        <div class="template-actions">
+                            <button class="btn-icon" onclick="editTemplate('${template.id}')">✏️</button>
+                            <button class="btn-icon danger" onclick="deleteTemplate('${template.id}')">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="template-days">
+                        ${template.daysOfWeek.map(d => `<span class="day-tag">${dayNames[d]}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Persistent quests in manage tab
+    if (persistentQuests.length === 0) {
+        persistentContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📌</div>
+                <div class="empty-state-text">Tiada quest berterusan</div>
+            </div>
+        `;
+    } else {
+        persistentContainer.innerHTML = persistentQuests.map(quest => `
+            <div class="template-item">
+                <div class="template-header">
+                    <div class="template-title">
+                        ${categoryIcons[quest.category]} ${quest.title}
+                        ${quest.status === 'completed' ? '<span class="quest-badge complete">✅</span>' : ''}
+                    </div>
+                    <div class="template-actions">
+                        <button class="btn-icon danger" onclick="deletePersistentQuest('${quest.id}')">🗑️</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+function updateProgress() {
+    const completed = todayQuests.filter(q => q.status === 'completed' || q.status === 'verified').length;
+    const total = todayQuests.length;
+    
+    document.getElementById('questProgress').textContent = `${completed}/${total}`;
+    
+    const percent = total > 0 ? (completed / total) * 100 : 0;
+    document.getElementById('progressFill').style.width = `${percent}%`;
+}
+
+// ===== Quest Actions =====
+async function toggleDailyQuest(questId) {
+    const quest = todayQuests.find(q => q.id === questId);
+    if (!quest) return;
+    
+    const today = getTodayDate();
+    const newStatus = (quest.status === 'pending') ? 'completed' : 'pending';
+    
+    try {
+        await db.ref(`dailyQuests/${currentUser.uid}/${today}/${questId}`).update({
+            status: newStatus,
+            completedAt: newStatus === 'completed' ? Date.now() : null
+        });
+        
+        // Update local state
+        quest.status = newStatus;
+        quest.completedAt = newStatus === 'completed' ? Date.now() : null;
+        
+        // Update EXP if completed
+        if (newStatus === 'completed') {
+            await updateExp(EXP_DAILY_QUEST);
+            
+            // Check if all quests completed
+            const allCompleted = todayQuests.every(q => q.status === 'completed' || q.status === 'verified');
+            if (allCompleted) {
+                await updateExp(EXP_COMPLETE_ALL_BONUS);
+                showToast('🎉 Semua quest selesai! Bonus +' + EXP_COMPLETE_ALL_BONUS + ' EXP');
+            }
+        } else {
+            await updateExp(-EXP_DAILY_QUEST);
+        }
+        
+        renderTodayQuests();
+        updateProgress();
+        renderUserInfo();
+    } catch (error) {
+        console.error('Toggle quest error:', error);
+        showToast('Ralat mengemas kini quest');
+    }
+}
+
+async function togglePersistentQuest(questId) {
+    const quest = persistentQuests.find(q => q.id === questId);
+    if (!quest) return;
+    
+    const today = getTodayDate();
+    const newStatus = (quest.status === 'pending') ? 'completed' : 'pending';
+    
+    try {
+        await db.ref(`persistentQuests/${currentUser.uid}/${questId}`).update({
+            status: newStatus,
+            completedAt: newStatus === 'completed' ? Date.now() : null,
+            completedDate: newStatus === 'completed' ? today : null
+        });
+        
+        // Update local state
+        quest.status = newStatus;
+        quest.completedAt = newStatus === 'completed' ? Date.now() : null;
+        quest.completedDate = newStatus === 'completed' ? today : null;
+        
+        // Update EXP
+        if (newStatus === 'completed') {
+            await updateExp(EXP_PERSISTENT_QUEST);
+        } else {
+            await updateExp(-EXP_PERSISTENT_QUEST);
+        }
+        
+        renderPersistentQuests();
+        renderTemplates(); // Update manage tab
+        renderUserInfo();
+    } catch (error) {
+        console.error('Toggle persistent quest error:', error);
+        showToast('Ralat mengemas kini quest');
+    }
+}
+
+async function updateExp(amount) {
+    try {
+        const newExp = (userProfile.totalExp || 0) + amount;
+        await db.ref(`users/${currentUser.uid}`).update({
+            totalExp: newExp
+        });
+        userProfile.totalExp = newExp;
+    } catch (error) {
+        console.error('Update EXP error:', error);
+    }
+}
+
+// ===== Add/Edit Quest Functions =====
+function openAddQuestModal() {
+    document.getElementById('modalTitle').textContent = 'Tambah Quest';
+    document.getElementById('questTitleInput').value = '';
+    document.getElementById('questCategorySelect').value = 'home';
+    document.getElementById('editTemplateId').value = '';
+    
+    // Set to daily by default
+    setQuestType('daily');
+    
+    // Check today's day
+    const today = getTodayDayOfWeek();
+    document.querySelectorAll('.day-checkbox input').forEach(input => {
+        input.checked = (parseInt(input.value) === today);
+    });
+    
+    document.getElementById('addQuestModal').classList.add('active');
+}
+
+function closeAddQuestModal() {
+    document.getElementById('addQuestModal').classList.remove('active');
+}
+
+function setQuestType(type) {
+    const dailyBtn = document.getElementById('dailyTypeBtn');
+    const persistentBtn = document.getElementById('persistentTypeBtn');
+    const daysSection = document.getElementById('daysSection');
+    
+    if (type === 'daily') {
+        dailyBtn.classList.add('active');
+        persistentBtn.classList.remove('active');
+        daysSection.style.display = 'block';
+    } else {
+        persistentBtn.classList.add('active');
+        dailyBtn.classList.remove('active');
+        daysSection.style.display = 'none';
+    }
+}
+
+async function saveQuest() {
+    const title = document.getElementById('questTitleInput').value.trim();
+    const category = document.getElementById('questCategorySelect').value;
+    const isPersistent = document.getElementById('persistentTypeBtn').classList.contains('active');
+    const editId = document.getElementById('editTemplateId').value;
+    
+    if (!title) {
+        showToast('Sila masukkan tajuk quest');
+        return;
+    }
+    
+    try {
+        if (isPersistent) {
+            // Save persistent quest
+            if (editId) {
+                // Edit existing (not implemented in Phase 1)
+            } else {
+                // Add new
+                const newQuestRef = db.ref(`persistentQuests/${currentUser.uid}`).push();
+                await newQuestRef.set({
+                    title,
+                    category,
+                    status: 'pending',
+                    createdAt: Date.now()
+                });
+                
+                persistentQuests.push({
+                    id: newQuestRef.key,
+                    title,
+                    category,
+                    status: 'pending',
+                    createdAt: Date.now()
+                });
+            }
+        } else {
+            // Save daily quest template
+            const selectedDays = Array.from(document.querySelectorAll('.day-checkbox input:checked'))
+                .map(input => parseInt(input.value));
+            
+            if (selectedDays.length === 0) {
+                showToast('Sila pilih sekurang-kurangnya satu hari');
+                return;
+            }
+            
+            if (editId) {
+                // Edit existing template
+                await db.ref(`questTemplates/${currentUser.uid}/${editId}`).update({
+                    title,
+                    category,
+                    daysOfWeek: selectedDays
+                });
+                
+                const template = questTemplates.find(t => t.id === editId);
+                if (template) {
+                    template.title = title;
+                    template.category = category;
+                    template.daysOfWeek = selectedDays;
+                }
+            } else {
+                // Add new template
+                const newTemplateRef = db.ref(`questTemplates/${currentUser.uid}`).push();
+                await newTemplateRef.set({
+                    title,
+                    category,
+                    daysOfWeek: selectedDays,
+                    createdAt: Date.now()
+                });
+                
+                questTemplates.push({
+                    id: newTemplateRef.key,
+                    title,
+                    category,
+                    daysOfWeek: selectedDays,
+                    createdAt: Date.now()
+                });
+            }
+            
+            // If today is selected, add to today's quests
+            const today = getTodayDayOfWeek();
+            const todayDate = getTodayDate();
+            if (selectedDays.includes(today) && !editId) {
+                const newQuestRef = db.ref(`dailyQuests/${currentUser.uid}/${todayDate}`).push();
+                await newQuestRef.set({
+                    templateId: editId || newTemplateRef.key,
+                    title,
+                    category,
+                    status: 'pending',
+                    createdAt: Date.now(),
+                    completedAt: null,
+                    verifiedAt: null
+                });
+                
+                todayQuests.push({
+                    id: newQuestRef.key,
+                    templateId: editId || newTemplateRef.key,
+                    title,
+                    category,
+                    status: 'pending',
+                    createdAt: Date.now()
+                });
+            }
+        }
+        
+        closeAddQuestModal();
+        renderTodayQuests();
+        renderPersistentQuests();
+        renderTemplates();
+        updateProgress();
+        showToast(editId ? 'Quest dikemas kini' : 'Quest ditambah');
+    } catch (error) {
+        console.error('Save quest error:', error);
+        showToast('Ralat menyimpan quest');
+    }
+}
+
+async function editTemplate(templateId) {
+    const template = questTemplates.find(t => t.id === templateId);
+    if (!template) return;
+    
+    document.getElementById('modalTitle').textContent = 'Edit Quest';
+    document.getElementById('questTitleInput').value = template.title;
+    document.getElementById('questCategorySelect').value = template.category;
+    document.getElementById('editTemplateId').value = templateId;
+    
+    setQuestType('daily');
+    
+    document.querySelectorAll('.day-checkbox input').forEach(input => {
+        input.checked = template.daysOfWeek.includes(parseInt(input.value));
+    });
+    
+    document.getElementById('addQuestModal').classList.add('active');
+}
+
+async function deleteTemplate(templateId) {
+    if (!confirm('Adakah anda pasti mahu memadam template ini?')) return;
+    
+    try {
+        await db.ref(`questTemplates/${currentUser.uid}/${templateId}`).remove();
+        questTemplates = questTemplates.filter(t => t.id !== templateId);
+        renderTemplates();
+        showToast('Template dipadam');
+    } catch (error) {
+        console.error('Delete template error:', error);
+        showToast('Ralat memadam template');
+    }
+}
+
+async function deletePersistentQuest(questId) {
+    if (!confirm('Adakah anda pasti mahu memadam quest ini?')) return;
+    
+    try {
+        await db.ref(`persistentQuests/${currentUser.uid}/${questId}`).remove();
+        persistentQuests = persistentQuests.filter(q => q.id !== questId);
+        renderPersistentQuests();
+        renderTemplates();
+        showToast('Quest dipadam');
+    } catch (error) {
+        console.error('Delete persistent quest error:', error);
+        showToast('Ralat memadam quest');
+    }
+}
+
+// ===== Settings Functions =====
+function showIdLoginModal() {
+    document.getElementById('idLoginModal').classList.add('active');
+}
+
+function closeIdLoginModal() {
+    document.getElementById('idLoginModal').classList.remove('active');
+}
+
+function showChangePinModal() {
+    document.getElementById('changePinModal').classList.add('active');
+}
+
+function closeChangePinModal() {
+    document.getElementById('changePinModal').classList.remove('active');
+}
+
+async function changePin() {
+    const oldPin = document.getElementById('oldPinInput').value;
+    const newPin = document.getElementById('newChangePinInput').value;
+    const confirmPin = document.getElementById('confirmChangePinInput').value;
+    
+    if (oldPin !== userProfile.pin) {
+        showToast('PIN lama tidak tepat');
+        return;
+    }
+    
+    if (!newPin || newPin.length !== 4) {
+        showToast('PIN baru mestilah 4 digit');
+        return;
+    }
+    
+    if (newPin !== confirmPin) {
+        showToast('PIN baru tidak sepadan');
+        return;
+    }
+    
+    try {
+        await db.ref(`users/${currentUser.uid}`).update({ pin: newPin });
+        userProfile.pin = newPin;
+        
+        // Update saved credentials
+        const savedCreds = JSON.parse(localStorage.getItem('dailyquest_creds'));
+        localStorage.setItem('dailyquest_creds', JSON.stringify({
+            ...savedCreds,
+            pin: newPin
+        }));
+        
+        closeChangePinModal();
+        showToast('PIN berjaya ditukar');
+        
+        // Clear inputs
+        document.getElementById('oldPinInput').value = '';
+        document.getElementById('newChangePinInput').value = '';
+        document.getElementById('confirmChangePinInput').value = '';
+    } catch (error) {
+        console.error('Change PIN error:', error);
+        showToast('Ralat menukar PIN');
+    }
+}
+
+function copyIdCode() {
+    const idCode = userProfile.idCode;
+    navigator.clipboard.writeText(idCode).then(() => {
+        showToast('ID Code disalin');
+    }).catch(() => {
+        showToast('Ralat menyalin ID Code');
+    });
+}
+
+// ===== Tab Navigation =====
+function switchTab(tabName) {
+    // Update nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Update tab panes
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+    });
+    
+    const tabMap = {
+        quest: 'questTab',
+        urus: 'urusTab',
+        sejarah: 'sejarahTab',
+        lagi: 'lagiTab'
+    };
+    
+    document.getElementById(tabMap[tabName]).classList.add('active');
+    
+    // Update header title
+    const titleMap = {
+        quest: 'Quest',
+        urus: 'Urus Quest',
+        sejarah: 'Sejarah',
+        lagi: 'Tetapan'
+    };
+    
+    document.getElementById('headerTitle').textContent = titleMap[tabName];
+    
+    // Show/hide FAB
+    document.getElementById('fabBtn').style.display = 
+        (tabName === 'quest' || tabName === 'urus') ? 'flex' : 'none';
+}
+
+// ===== Event Listeners =====
+document.addEventListener('DOMContentLoaded', () => {
+    // Login buttons
+    document.getElementById('googleLoginBtn').addEventListener('click', loginWithGoogle);
+    document.getElementById('showIdLoginBtn').addEventListener('click', showIdLoginModal);
+    document.getElementById('idLoginSubmitBtn').addEventListener('click', () => {
+        const idCode = document.getElementById('idCodeInput').value.trim();
+        const pin = document.getElementById('pinInput').value;
+        if (idCode && pin) {
+            loginWithIdCode(idCode, pin);
+        }
+    });
+    
+    // PIN setup
+    document.getElementById('pinSetupSubmitBtn').addEventListener('click', setupPin);
+    
+    // Quest type toggle
+    document.getElementById('dailyTypeBtn').addEventListener('click', () => setQuestType('daily'));
+    document.getElementById('persistentTypeBtn').addEventListener('click', () => setQuestType('persistent'));
+    
+    // Save quest
+    document.getElementById('saveQuestBtn').addEventListener('click', saveQuest);
+    
+    // FAB
+    document.getElementById('fabBtn').addEventListener('click', openAddQuestModal);
+    
+    // Settings
+    document.getElementById('changePinBtn').addEventListener('click', showChangePinModal);
+    document.getElementById('changePinSubmitBtn').addEventListener('click', changePin);
+    document.getElementById('copyIdBtn').addEventListener('click', copyIdCode);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    
+    // Tab navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            switchTab(item.dataset.tab);
+        });
+    });
+    
+    // Close modals when clicking backdrop
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+    });
+    
+    // Check auth state
+    checkAuthState();
+});
