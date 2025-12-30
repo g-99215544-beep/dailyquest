@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#00b894">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Daily Quest</title>
+    
+    <style>
+        /* ===== CSS Variables ===== */
+        :root {
+            --primary: #00b894;
+            --primary-light: #55efc4;
+            --primary-dark: #00a383;
+            --purple: #6c5ce7;
+            --warning: #fdcb6e;
+            --danger: #e74c3c;
+            --success: #27ae60;
+            --background: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-primary: #2d3436;
+            --text-secondary: #636e72;
+            --border: #dfe6e9;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --shadow-lg: rgba(0, 0, 0, 0.15);
+        }
+
+        /* ===== Reset & Base ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* ===== Screen Container ===== */
+        .screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== Login Screen ===== */
+        #loginScreen {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--purple) 100%);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+
+        .app-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .login-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .login-methods {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px var(--shadow-lg);
+        }
+
+        .btn-google {
+            width: 100%;
+            padding: 14px 20px;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn-google:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 14px 20px;
+            background: var(--background);
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+            transform: translateY(-2px);
+        }
+
+        /* ===== Modal ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px var(--shadow-lg);
+            animation: modalSlideUp 0.3s ease;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover { background: var(--background); }
+        .modal-body { padding: 1.5rem; }
+
+        /* ===== Form Elements ===== */
+        .form-group { margin-bottom: 1.5rem; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+        }
+
+        /* ===== App Header ===== */
+        .app-header {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            padding-top: calc(1rem + env(safe-area-inset-top));
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .header-icon { font-size: 1.5rem; }
+
+        #levelBadge {
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        /* ===== Tab Content ===== */
+        .tab-content {
+            flex: 1;
+            padding: 1rem;
+            padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            overflow-y: auto;
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* ===== Progress Section ===== */
+        .progress-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        #questProgress {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: var(--background);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        /* ===== Week Summary ===== */
+        .week-summary {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .week-day {
+            flex: 1;
+            min-width: 50px;
+            background: white;
+            padding: 12px 8px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .week-day span:first-child {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .week-day span:last-child { font-size: 1.2rem; }
+
+        .week-day.today {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            color: white;
+        }
+
+        .week-day.today span:first-child {
+            color: white;
+            opacity: 0.9;
+        }
+
+        /* ===== Quest Section ===== */
+        .quest-section { margin-bottom: 1.5rem; }
+
+        .quest-section h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .quest-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* ===== Quest Item ===== */
+        .quest-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quest-item:hover { transform: translateX(4px); }
+
+        .quest-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-radius: 50%;
+            flex-shrink: 0;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .quest-item.completed .quest-checkbox {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .quest-item.completed .quest-checkbox::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .quest-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .quest-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+        }
+
+        .quest-item.completed .quest-title {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .quest-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .quest-category {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .quest-exp {
+            font-weight: 600;
+            color: var(--purple);
+        }
+
+        .quest-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .quest-badge.complete {
+            background: #d4edda;
+            color: var(--success);
+        }
+
+        /* ===== Template Item ===== */
+        .template-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px var(--shadow);
+            margin-bottom: 10px;
+        }
+
+        .template-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .template-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .template-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            background: var(--background);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .btn-icon:hover {
+            background: var(--border);
+            transform: scale(1.05);
+        }
+
+        .btn-icon.danger:hover {
+            background: #fee;
+            color: var(--danger);
+        }
+
+        .template-days {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .day-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--background);
+            border-radius: 8px;
+            margin-right: 4px;
+            margin-top: 4px;
+        }
+
+        /* ===== Quest Type Toggle ===== */
+        .quest-type-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 10px;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .type-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* ===== Days Grid ===== */
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .day-checkbox {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 10px;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .day-checkbox input { display: none; }
+        .day-checkbox input:checked + span { color: white; }
+
+        .day-checkbox:has(input:checked) {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .day-checkbox span {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* ===== Settings ===== */
+        .settings-container { max-width: 600px; }
+
+        .settings-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .settings-section h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+        }
+
+        .settings-item:not(:last-child) {
+            border-bottom: 1px solid var(--background);
+        }
+
+        .settings-icon {
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--background);
+            border-radius: 10px;
+        }
+
+        .settings-info { flex: 1; }
+        .settings-info.full-width { width: 100%; }
+
+        .settings-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .settings-value { font-weight: 600; }
+
+        .id-code-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        #userIdCode {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            color: var(--primary);
+        }
+
+        .level-display { width: 100%; }
+
+        .level-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .level-badge {
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .exp-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .level-progress-bar {
+            height: 10px;
+            background: var(--background);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .level-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--purple));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .settings-button {
+            width: 100%;
+            padding: 14px 20px;
+            background: var(--background);
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .settings-button:hover {
+            background: var(--border);
+            transform: translateY(-2px);
+        }
+
+        .settings-button.danger { color: var(--danger); }
+        .settings-button.danger:hover { background: #fee; }
+
+        /* ===== Bottom Navigation ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .nav-item.active { color: var(--primary); }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* ===== FAB Button ===== */
+        .fab {
+            position: fixed;
+            bottom: calc(70px + env(safe-area-inset-bottom));
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 16px var(--shadow-lg);
+            transition: all 0.3s;
+            z-index: 99;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab:hover { transform: scale(1.1) rotate(90deg); }
+
+        /* ===== Toast Notification ===== */
+        .toast {
+            position: fixed;
+            bottom: calc(90px + env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text-primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-weight: 600;
+            z-index: 1001;
+            opacity: 0;
+            transition: all 0.3s;
+            box-shadow: 0 4px 16px var(--shadow-lg);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ===== Empty State ===== */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text { font-size: 1rem; }
+
+        /* ===== History ===== */
+        .history-container { max-width: 600px; }
+
+        .history-header {
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px var(--shadow);
+            text-align: center;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 480px) {
+            .login-header h1 { font-size: 1.75rem; }
+            .app-icon { font-size: 3rem; }
+            .days-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* ===== Animations ===== */
+        @keyframes slideInUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .quest-item { animation: slideInUp 0.3s ease; }
+    </style>
+</head>
+<body>
+    
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="app-icon">⚔️</div>
+                <h1>Daily Quest</h1>
+                <p>Gamify tugasan harian anda</p>
+            </div>
+            
+            <div class="login-methods">
+                <button id="googleLoginBtn" class="btn-google">
+                    <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
+                        <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/>
+                        <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/>
+                        <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/>
+                    </svg>
+                    Log Masuk dengan Google
+                </button>
+                
+                <div class="divider">atau</div>
+                
+                <button id="showIdLoginBtn" class="btn-secondary">Log Masuk dengan ID Code</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ID Code Login Modal -->
+    <div id="idLoginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Log Masuk dengan ID Code</h2>
+                <button class="modal-close" onclick="closeIdLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>ID Code</label>
+                    <input type="text" id="idCodeInput" placeholder="Contoh: ZNP2GL" maxlength="6" style="text-transform: uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>PIN (4 digit)</label>
+                    <input type="password" id="pinInput" placeholder="****" maxlength="4" inputmode="numeric">
+                </div>
+                <button id="idLoginSubmitBtn" class="btn-primary">Log Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIN Setup Modal -->
+    <div id="pinSetupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Setup PIN Anda</h2>
+            </div>
+            <div class="modal-body">
+                <p>Untuk log masuk di peranti lain, sila setup PIN 4 digit.</p>
+                <div class="form-group">
+                    <label>PIN (4 digit)</label>
+                    <input type="password" id="newPinInput" placeholder="****" maxlength="4" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label>Sahkan PIN</label>
+                    <input type="password" id="confirmPinInput" placeholder="****" maxlength="4" inputmode="numeric">
+                </div>
+                <button id="pinSetupSubmitBtn" class="btn-primary">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Screen -->
+    <div id="appScreen" class="screen" style="display: none;">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-title">
+                    <span class="header-icon">⚔️</span>
+                    <span id="headerTitle">Quest</span>
+                </div>
+                <div class="header-level">
+                    <span id="levelBadge">Level 1</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tab Content -->
+        <main class="tab-content">
+            
+            <!-- Quest Tab -->
+            <div id="questTab" class="tab-pane active">
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span>Quest Hari Ini</span>
+                        <span id="questProgress">0/0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                </div>
+
+                <div class="week-summary">
+                    <div class="week-day" data-day="1"><span>Isn</span><span id="day1">·</span></div>
+                    <div class="week-day" data-day="2"><span>Sel</span><span id="day2">·</span></div>
+                    <div class="week-day" data-day="3"><span>Rab</span><span id="day3">·</span></div>
+                    <div class="week-day" data-day="4"><span>Kha</span><span id="day4">·</span></div>
+                    <div class="week-day" data-day="5"><span>Jum</span><span id="day5">·</span></div>
+                    <div class="week-day" data-day="6"><span>Sab</span><span id="day6">·</span></div>
+                    <div class="week-day" data-day="0"><span>Ahd</span><span id="day0">·</span></div>
+                </div>
+
+                <div class="quest-section">
+                    <h3>📌 Berterusan</h3>
+                    <div id="persistentQuestList" class="quest-list"></div>
+                </div>
+
+                <div class="quest-section">
+                    <h3>📅 Hari Ini</h3>
+                    <div id="dailyQuestList" class="quest-list"></div>
+                </div>
+            </div>
+
+            <!-- Urus Tab -->
+            <div id="urusTab" class="tab-pane">
+                <div class="quest-section">
+                    <h3>🔄 Template Quest Harian</h3>
+                    <div id="templateList" class="quest-list"></div>
+                </div>
+
+                <div class="quest-section">
+                    <h3>📌 Quest Berterusan</h3>
+                    <div id="persistentManageList" class="quest-list"></div>
+                </div>
+            </div>
+
+            <!-- Sejarah Tab -->
+            <div id="sejarahTab" class="tab-pane">
+                <div class="history-container">
+                    <div class="history-header">
+                        <h2 id="historyMonth">Sejarah</h2>
+                    </div>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📜</div>
+                        <div class="empty-state-text">Sejarah akan ditambah dalam Phase 2</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lagi Tab (Settings) -->
+            <div id="lagiTab" class="tab-pane">
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <h3>Akaun</h3>
+                        <div class="settings-item">
+                            <div class="settings-icon">👤</div>
+                            <div class="settings-info">
+                                <div class="settings-label">Nama</div>
+                                <div id="userName" class="settings-value">-</div>
+                            </div>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-icon">📧</div>
+                            <div class="settings-info">
+                                <div class="settings-label">Email</div>
+                                <div id="userEmail" class="settings-value">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>ID Code</h3>
+                        <div class="settings-item">
+                            <div class="settings-info full-width">
+                                <div class="settings-label">ID Code untuk log masuk di peranti lain</div>
+                                <div class="id-code-display">
+                                    <span id="userIdCode">------</span>
+                                    <button id="copyIdBtn" class="btn-icon" title="Salin">📋</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Level & EXP</h3>
+                        <div class="settings-item">
+                            <div class="settings-info full-width">
+                                <div class="level-display">
+                                    <div class="level-info">
+                                        <span class="level-badge" id="settingsLevel">Level 1</span>
+                                        <span class="exp-text" id="settingsExp">0 / 100 EXP</span>
+                                    </div>
+                                    <div class="level-progress-bar">
+                                        <div id="levelProgressFill" class="level-progress-fill"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Keselamatan</h3>
+                        <button id="changePinBtn" class="settings-button">🔒 Tukar PIN</button>
+                    </div>
+
+                    <div class="settings-section">
+                        <button id="logoutBtn" class="settings-button danger">🚪 Log Keluar</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-tab="quest">
+                <span class="nav-icon">⚔️</span>
+                <span class="nav-label">Quest</span>
+            </button>
+            <button class="nav-item" data-tab="urus">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Urus</span>
+            </button>
+            <button class="nav-item" data-tab="sejarah">
+                <span class="nav-icon">📜</span>
+                <span class="nav-label">Sejarah</span>
+            </button>
+            <button class="nav-item" data-tab="lagi">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Lagi</span>
+            </button>
+        </nav>
+
+        <!-- FAB Button -->
+        <button id="fabBtn" class="fab">
+            <span>+</span>
+        </button>
+    </div>
+
+    <!-- Add Quest Modal -->
+    <div id="addQuestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Quest</h2>
+                <button class="modal-close" onclick="closeAddQuestModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="quest-type-toggle">
+                    <button id="dailyTypeBtn" class="type-btn active">Harian</button>
+                    <button id="persistentTypeBtn" class="type-btn">Berterusan</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Tajuk Quest</label>
+                    <input type="text" id="questTitleInput" placeholder="Contoh: Sapu lantai">
+                </div>
+
+                <div class="form-group">
+                    <label>Kategori</label>
+                    <select id="questCategorySelect">
+                        <option value="home">🏠 Rumah</option>
+                        <option value="work">💼 Kerja</option>
+                        <option value="fitness">💪 Kecergasan</option>
+                        <option value="learning">📚 Pembelajaran</option>
+                        <option value="self">🧘 Self-care</option>
+                        <option value="other">✨ Lain-lain</option>
+                    </select>
+                </div>
+
+                <div id="daysSection" class="form-group">
+                    <label>Hari</label>
+                    <div class="days-grid">
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="1">
+                            <span>Isn</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="2">
+                            <span>Sel</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="3">
+                            <span>Rab</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="4">
+                            <span>Kha</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="5">
+                            <span>Jum</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="6">
+                            <span>Sab</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="0">
+                            <span>Ahd</span>
+                        </label>
+                    </div>
+                </div>
+
+                <input type="hidden" id="editTemplateId">
+                <button id="saveQuestBtn" class="btn-primary">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change PIN Modal -->
+    <div id="changePinModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tukar PIN</h2>
+                <button class="modal-close" onclick="closeChangePinModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>PIN Lama</label>
+                    <input type="password" id="oldPinInput" placeholder="****" maxlength="4" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label>PIN Baru</label>
+                    <input type="password" id="newChangePinInput" placeholder="****" maxlength="4" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label>Sahkan PIN Baru</label>
+                    <input type="password" id="confirmChangePinInput" placeholder="****" maxlength="4" inputmode="numeric">
+                </div>
+                <button id="changePinSubmitBtn" class="btn-primary">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <!-- App Logic -->
+    <script src="database.js"></script>
+
+</body>
+</html>
