@@ -1375,8 +1375,19 @@
                         <option value="fitness">💪 Kecergasan</option>
                         <option value="learning">📚 Pembelajaran</option>
                         <option value="self">🧘 Self-care</option>
+                        <option value="groceries">🛒 Groceries</option>
                         <option value="other">✨ Lain-lain</option>
                     </select>
+                </div>
+
+                <!-- Grocery Items Section (shown only for groceries category) -->
+                <div id="groceryItemsSection" class="form-group" style="display: none;">
+                    <label>Barang-barang</label>
+                    <div id="groceryItemsList"></div>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <input type="text" id="newGroceryItem" placeholder="Contoh: Ayam 1kg" style="flex: 1;">
+                        <button type="button" onclick="addGroceryItem()" class="btn-icon" style="padding: 10px 16px;">➕</button>
+                    </div>
                 </div>
 
                 <div id="daysSection" class="form-group">
