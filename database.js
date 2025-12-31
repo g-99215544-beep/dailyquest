@@ -22,6 +22,7 @@ let questTemplates = [];
 let todayQuests = [];
 let persistentQuests = [];
 let userProfile = null;
+let groceryItems = []; // Temporary storage for grocery items in modal
 
 // ===== CATEGORY ICONS & NAMES =====
 const categoryIcons = {
@@ -30,6 +31,7 @@ const categoryIcons = {
     fitness: '💪',
     learning: '📚',
     self: '🧘',
+    groceries: '🛒',
     other: '✨'
 };
 
@@ -39,12 +41,14 @@ const categoryNames = {
     fitness: 'Kecergasan',
     learning: 'Pembelajaran',
     self: 'Self-care',
+    groceries: 'Groceries',
     other: 'Lain-lain'
 };
 
 // ===== EXP VALUES =====
 const EXP_DAILY_QUEST = 10;
 const EXP_PERSISTENT_QUEST = 50;
+const EXP_GROCERY_ITEM = 5;
 const EXP_COMPLETE_ALL_BONUS = 20;
 
 // ===== HELPER FUNCTIONS =====
@@ -511,19 +515,56 @@ function renderPersistentQuests() {
         return;
     }
     
-    container.innerHTML = persistentQuests.map(quest => `
-        <div class="quest-item ${quest.status === 'completed' ? 'completed' : ''}" onclick="togglePersistentQuest('${quest.id}')">
-            <div class="quest-checkbox"></div>
-            <div class="quest-info">
-                <div class="quest-title">${quest.title}</div>
-                <div class="quest-meta">
-                    <span class="quest-category">${categoryIcons[quest.category]} ${categoryNames[quest.category]}</span>
-                    <span class="quest-exp">+${EXP_PERSISTENT_QUEST} EXP</span>
+    container.innerHTML = persistentQuests.map(quest => {
+        // Handle groceries with items
+        if (quest.category === 'groceries' && quest.items && quest.items.length > 0) {
+            const completedCount = quest.items.filter(item => item.completed).length;
+            const totalCount = quest.items.length;
+            const allComplete = completedCount === totalCount;
+            
+            return `
+                <div class="quest-item ${allComplete ? 'completed' : ''}" style="flex-direction: column; align-items: stretch;">
+                    <div style="display: flex; align-items: center; gap: 12px; cursor: default;">
+                        <div class="quest-checkbox" style="pointer-events: none;"></div>
+                        <div class="quest-info" style="flex: 1;">
+                            <div class="quest-title">${quest.title}</div>
+                            <div class="quest-meta">
+                                <span class="quest-category">${categoryIcons[quest.category]} ${categoryNames[quest.category]}</span>
+                                <span class="quest-exp" style="font-weight: 700;">${completedCount}/${totalCount} items</span>
+                            </div>
+                        </div>
+                        ${allComplete ? '<span class="quest-badge complete">✅ Complete</span>' : ''}
+                    </div>
+                    <div style="margin-left: 44px; margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        ${quest.items.map((item, index) => `
+                            <div class="grocery-item ${item.completed ? 'completed' : ''}" onclick="toggleGroceryItem('${quest.id}', ${index})" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: ${item.completed ? 'rgba(107, 207, 127, 0.1)' : 'rgba(162, 155, 254, 0.1)'}; border-radius: 12px; cursor: pointer; transition: all 0.3s;">
+                                <div style="width: 24px; height: 24px; border: 3px solid ${item.completed ? '#6bcf7f' : '#a29bfe'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: ${item.completed ? '#6bcf7f' : 'transparent'}; transition: all 0.3s;">
+                                    ${item.completed ? '<span style="color: white; font-size: 14px; font-weight: bold;">✓</span>' : ''}
+                                </div>
+                                <span style="flex: 1; font-weight: 600; ${item.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${item.name}</span>
+                                <span class="quest-exp" style="font-size: 0.85rem;">+${EXP_GROCERY_ITEM} EXP</span>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
+            `;
+        }
+        
+        // Handle regular persistent quests
+        return `
+            <div class="quest-item ${quest.status === 'completed' ? 'completed' : ''}" onclick="togglePersistentQuest('${quest.id}')">
+                <div class="quest-checkbox"></div>
+                <div class="quest-info">
+                    <div class="quest-title">${quest.title}</div>
+                    <div class="quest-meta">
+                        <span class="quest-category">${categoryIcons[quest.category]} ${categoryNames[quest.category]}</span>
+                        <span class="quest-exp">+${EXP_PERSISTENT_QUEST} EXP</span>
+                    </div>
+                </div>
+                ${quest.status === 'completed' ? '<span class="quest-badge complete">✅ Complete</span>' : ''}
             </div>
-            ${quest.status === 'completed' ? '<span class="quest-badge complete">✅ Complete</span>' : ''}
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function renderTemplates() {
@@ -674,6 +715,66 @@ async function togglePersistentQuest(questId) {
     }
 }
 
+async function toggleGroceryItem(questId, itemIndex) {
+    const quest = persistentQuests.find(q => q.id === questId);
+    if (!quest || !quest.items || !quest.items[itemIndex]) return;
+    
+    const item = quest.items[itemIndex];
+    const wasCompleted = item.completed;
+    item.completed = !wasCompleted;
+    
+    try {
+        // Update item in database
+        await db.ref(`persistentQuests/${currentUser.uid}/${questId}/items/${itemIndex}`).update({
+            completed: item.completed
+        });
+        
+        // Award or remove EXP
+        if (item.completed) {
+            await updateExp(EXP_GROCERY_ITEM);
+        } else {
+            await updateExp(-EXP_GROCERY_ITEM);
+        }
+        
+        // Check if all items complete
+        const allComplete = quest.items.every(item => item.completed);
+        if (allComplete && !wasCompleted) {
+            // Just completed last item - give bonus!
+            await updateExp(EXP_COMPLETE_ALL_BONUS);
+            showToast('🎉 Semua barang selesai! Bonus +' + EXP_COMPLETE_ALL_BONUS + ' EXP');
+            
+            // Mark quest as completed and auto-delete
+            await db.ref(`persistentQuests/${currentUser.uid}/${questId}`).update({
+                status: 'completed',
+                completedAt: Date.now(),
+                completedDate: getTodayDate()
+            });
+            
+            // Remove from list after short delay
+            setTimeout(async () => {
+                await db.ref(`persistentQuests/${currentUser.uid}/${questId}`).remove();
+                persistentQuests = persistentQuests.filter(q => q.id !== questId);
+                renderPersistentQuests();
+                renderTemplates();
+                updateProgress();
+            }, 2000);
+        } else if (!allComplete && wasCompleted) {
+            // Was complete, now incomplete - check if need to remove bonus
+            const completedItems = quest.items.filter(i => i.completed).length;
+            if (completedItems === quest.items.length - 1) {
+                // Was just at complete bonus, remove it
+                await updateExp(-EXP_COMPLETE_ALL_BONUS);
+            }
+        }
+        
+        renderPersistentQuests();
+        renderUserInfo();
+    } catch (error) {
+        console.error('Toggle grocery item error:', error);
+        showToast('Ralat mengemas kini barang');
+    }
+}
+
 async function updateExp(amount) {
     try {
         const newExp = (userProfile.totalExp || 0) + amount;
@@ -692,6 +793,11 @@ function openAddQuestModal() {
     document.getElementById('questTitleInput').value = '';
     document.getElementById('questCategorySelect').value = 'home';
     document.getElementById('editTemplateId').value = '';
+    
+    // Clear grocery items
+    groceryItems = [];
+    renderGroceryItems();
+    updateGrocerySection();
     
     setQuestType('daily');
     
@@ -721,6 +827,62 @@ function setQuestType(type) {
         dailyBtn.classList.remove('active');
         daysSection.style.display = 'none';
     }
+    
+    // Update grocery section visibility
+    updateGrocerySection();
+}
+
+// ===== GROCERY ITEMS MANAGEMENT =====
+function updateGrocerySection() {
+    const category = document.getElementById('questCategorySelect').value;
+    const isPersistent = document.getElementById('persistentTypeBtn').classList.contains('active');
+    const grocerySection = document.getElementById('groceryItemsSection');
+    
+    // Show grocery items section only for persistent groceries quest
+    if (category === 'groceries' && isPersistent) {
+        grocerySection.style.display = 'block';
+    } else {
+        grocerySection.style.display = 'none';
+    }
+}
+
+function addGroceryItem() {
+    const input = document.getElementById('newGroceryItem');
+    const itemName = input.value.trim();
+    
+    if (!itemName) {
+        showToast('Sila masukkan nama barang');
+        return;
+    }
+    
+    groceryItems.push({
+        name: itemName,
+        completed: false
+    });
+    
+    input.value = '';
+    renderGroceryItems();
+}
+
+function removeGroceryItem(index) {
+    groceryItems.splice(index, 1);
+    renderGroceryItems();
+}
+
+function renderGroceryItems() {
+    const container = document.getElementById('groceryItemsList');
+    
+    if (groceryItems.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 1rem; text-align: center;">Tiada barang ditambah</div>';
+        return;
+    }
+    
+    container.innerHTML = groceryItems.map((item, index) => `
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(162, 155, 254, 0.1); border-radius: 8px; margin-bottom: 6px;">
+            <span style="flex: 1; font-weight: 600;">${item.name}</span>
+            <button type="button" onclick="removeGroceryItem(${index})" class="btn-icon danger" style="padding: 6px 10px; font-size: 0.9rem;">🗑️</button>
+        </div>
+    `).join('');
 }
 
 async function saveQuest() {
@@ -736,23 +898,36 @@ async function saveQuest() {
     
     try {
         if (isPersistent) {
+            // Validate grocery items if category is groceries
+            if (category === 'groceries' && groceryItems.length === 0) {
+                showToast('Sila tambah sekurang-kurangnya satu barang');
+                return;
+            }
+            
             if (editId) {
                 // Edit existing (not implemented in Phase 1)
             } else {
-                const newQuestRef = db.ref(`persistentQuests/${currentUser.uid}`).push();
-                await newQuestRef.set({
+                const questData = {
                     title,
                     category,
                     status: 'pending',
                     createdAt: Date.now()
-                });
+                };
+                
+                // Add items array for groceries
+                if (category === 'groceries') {
+                    questData.items = groceryItems.map(item => ({
+                        name: item.name,
+                        completed: false
+                    }));
+                }
+                
+                const newQuestRef = db.ref(`persistentQuests/${currentUser.uid}`).push();
+                await newQuestRef.set(questData);
                 
                 persistentQuests.push({
                     id: newQuestRef.key,
-                    title,
-                    category,
-                    status: 'pending',
-                    createdAt: Date.now()
+                    ...questData
                 });
             }
         } else {
@@ -1031,6 +1206,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Quest type toggle
     document.getElementById('dailyTypeBtn').addEventListener('click', () => setQuestType('daily'));
     document.getElementById('persistentTypeBtn').addEventListener('click', () => setQuestType('persistent'));
+    
+    // Category change - toggle grocery items section
+    document.getElementById('questCategorySelect').addEventListener('change', updateGrocerySection);
     
     // Save quest
     document.getElementById('saveQuestBtn').addEventListener('click', saveQuest);
